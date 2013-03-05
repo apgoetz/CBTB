@@ -1,17 +1,28 @@
 
-
+#include <stdint.h>
 #include "predictor.h"
+#include <cassert>
+#include <stdlib.h>
 
-
-
+#define BTBSIZE 4096
+uint16_t btb[BTBSIZE];
+static void on_exit(void);
+static long int timescalled= 0;
     bool PREDICTOR::get_prediction(const branch_record_c* br, const op_state_c* os, uint *predicted_target_address)
         {
-            bool prediction = true;
+		timescalled++;
+		static int hooked_exit = 0;
+		if(!hooked_exit){
+			hooked_exit++;
+			atexit(on_exit);
+		}
+		assert(!br->is_indirect || !br->is_conditional);
+		// bool prediction = true;
 
             if (br->is_conditional)
-                prediction = false;
-
-            return prediction;   // true for taken, false for not taken
+		    return true;   // true for taken, false for not taken
+	    else
+		    return false;
         }
 
     // Update the predictor after a prediction has been made.  This should accept
@@ -19,5 +30,24 @@
     // argument (taken) indicating whether or not the branch was taken.
     void PREDICTOR::update_predictor(const branch_record_c* br, const op_state_c* os, bool taken, uint actual_target_address)
         {
+		uint status = br->is_indirect ? 1 : 0;
+		status = status << 1;
+		status = status + (br->is_conditional ? 1: 0);
+		status = status << 1;
+		status = status + (br->is_call ? 1: 0);
+		status = status << 1;
+		status = status + (br->is_return ? 1: 0);
+		status = status << 1;
+		status = status + (taken ? 1: 0);
+		fprintf(stderr, "%08x%08x%08x%02x\n", 
+		       br->instruction_addr,
+		       br->instruction_next_addr,
+		       actual_target_address,
+		       status);
 
         }
+static void on_exit(void)
+{
+	printf("I got called %ld\n", timescalled);
+	// do nothing
+}
