@@ -38,11 +38,6 @@ static long int timescalled= 0;
 		status = status + (br->is_return ? 1: 0);
 		status = status << 1;
 		status = status + (taken ? 1: 0);
-		fprintf(stderr, "%08x%08x%08x%02x\n", 
-			br->instruction_addr,
-			br->instruction_next_addr,
-			actual_target_address,
-			status);
 
         }
 static void on_exit(void)
