@@ -2,7 +2,8 @@
 #include "predictor.h"
 #include <cassert>
 #include <stdlib.h>
-
+#include "alpha.cc"
+#include "btb.cc"
 #define BTBSIZE 4096
 uint16_t btb[BTBSIZE];
 static void on_exit(void);
