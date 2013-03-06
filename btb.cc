@@ -11,5 +11,14 @@ void target_update(const branch_record_c *br, uint actual_addr)
 {
 }
 
+
+// setup and destroy functions for the btb predictor
+void target_setup(void)
+{
+}
+
+void target_destroy(void)
+{
+}
 #endif
 

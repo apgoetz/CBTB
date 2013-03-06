@@ -4,8 +4,12 @@
 #include <stdlib.h>
 #include "alpha.cc"
 #include "btb.cc"
+
+// These functions are called once at the begining, and once at the
+// end of the trace
 static void on_exit(void);
 static void init(void);
+
 static long int timescalled= 0;
 static FILE *oraclefd = NULL;
 
@@ -67,14 +71,19 @@ void PREDICTOR::update_predictor(
 }
 static void on_exit(void)
 {
-	fprintf(stderr, "I got called %ld\n", timescalled);
+	// if we are using an oracle, close the pipe.
 	if (oraclefd)
 		pclose(oraclefd);
-	// do nothing
+
+
+	// run the btb destroy function
+	target_destroy();
 }
 
 static void init(void)
 {
+
+	// If we decided to use an ORACLE, hook the oracle now.
 	char* oraclefile = getenv("ORACLE");
 	char  oraclecmd[1024];
 	sprintf(oraclecmd, "xzcat %s",oraclefile);
@@ -83,5 +92,10 @@ static void init(void)
 		printf("Hooking ORACLE... %s\n", oraclefile);
 	}
 
+	// hook the exit function, so that data structures can be
+	// cleaned up. 
 	atexit(on_exit);
+
+	// call the setup functions for the btb:
+	target_setup();
 }
