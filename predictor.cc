@@ -41,13 +41,14 @@ bool PREDICTOR::get_prediction(
 			&status);
 		assert(instr_addr == br->instruction_addr);
 		taken = status & 1;
+		// *predicted_target_address = actual_addr;
 	}
 	// the predictor is only checked if the branch was taken, or
 	// it was unconditional. Therefore, we only need to call the
 	// target predictor if we think this was a taken branch, or if
 	// the branch is unconditional
-	if (taken)
-		*predicted_target_address = btb_predict(br);
+
+	*predicted_target_address = btb_predict(br);
 
 	
 
