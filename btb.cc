@@ -4,7 +4,7 @@
 
 uint target_predict(const branch_record_c *br)
 {
-	return 0;
+	return br->instruction_next_addr;
 }
 
 void target_update(const branch_record_c *br, uint actual_addr)

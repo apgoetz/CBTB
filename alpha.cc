@@ -13,7 +13,12 @@ bool alpha_global_predict(const branch_record_c *br)
 	return false;
 }
 
-void update(const branch_record_c *br, bool taken)
+bool alpha_predict(const branch_record_c *br)
+{
+	return false;
+}
+
+void alpha_update(const branch_record_c *br, bool taken)
 {
 }
 

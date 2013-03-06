@@ -17,16 +17,18 @@ bool PREDICTOR::get_prediction(
 		hooked_exit++;
 		atexit(on_exit);
 	}
-
-	*predicted_target_address = target_predict(br);
+	bool taken = alpha_predict(br);
+	// the predictor is only checked if the branch was taken, or
+	// it was unconditional. Therefore, we only need to call the
+	// target predictor if we think this was a taken branch, or if
+	// the branch is unconditional
+	if (taken || !br->is_conditional)
+		*predicted_target_address = target_predict(br);
 
 	
 
 	timescalled++;	
-	if (br->is_conditional)
-		return true;   // true for taken, false for not taken
-	else
-		return false;
+	return taken;
 }
 
 // Update the predictor after a prediction has been made.  This should accept
@@ -37,6 +39,7 @@ void PREDICTOR::update_predictor(
 	const op_state_c* os, bool taken, uint actual_target_address)
 {
 	target_update(br, actual_target_address);
+	alpha_update(br, taken);
 
 }
 static void on_exit(void)
