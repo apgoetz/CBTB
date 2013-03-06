@@ -41,6 +41,6 @@ void PREDICTOR::update_predictor(
 }
 static void on_exit(void)
 {
-	printf("I got called %ld\n", timescalled);
+	fprintf(stderr, "I got called %ld\n", timescalled);
 	// do nothing
 }

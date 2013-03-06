@@ -1,0 +1,14 @@
+PROJECT=tester
+OBJS=cbp_inst.o test.o op_state.o predictor.o tread.o
+
+CFLAGS = -g -Wall
+CXXFLAGS = -g -Wall
+
+all: $(PROJECT)
+
+$(PROJECT): $(OBJS)
+	$(CXX) -o $@ $^
+%.o: %.cc
+	g++ -c -o $@ $^
+clean:
+	rm -f $(PROJECT) $(OBJS)
