@@ -10,6 +10,10 @@ int main()
 	uint next_addr = 0xdeadbeef;
 	uint actual_addr = 0xdeadbeef;
 	uint status = 0x3f;
+	long int num_cond = 0;
+	long int num_uncond = 0;
+	long int num_returns = 0;
+	long int num_calls = 0;
 	long int num_branches = 0;
 	long int missed_predictions = 0;
 	long int missed_dest = 0;
@@ -39,9 +43,19 @@ int main()
 			missed_predictions++;
 
 		p.update_predictor(&br, NULL, taken, actual_addr);
+
+		if (br.is_conditional) num_cond++;
+		else num_uncond++;
+		
+		if (br.is_return) num_returns++;
+		
+		if(br.is_call) num_calls++;
 	}
-	printf("missed destinations per thousand transfers: %f\n", 
-	       1000.0*(double)missed_dest/num_branches);
-	printf("missed predictions per thousand transfers: %f\n", 
-	       1000.0*(double)missed_predictions/num_branches);
+	printf("tot_branches:\t%ld\n", num_branches);
+	printf("cond_branches:\t%ld\n", num_cond);
+	printf("uncond_branches:\t%ld\n", num_uncond);
+	printf("calls:\t%ld\n", num_calls);
+	printf("returns:\t%ld\n", num_returns);
+	printf("missed_predictions:\t%ld\n", missed_predictions);
+	printf("missed_targets:\t%ld\n", missed_dest);
 }
