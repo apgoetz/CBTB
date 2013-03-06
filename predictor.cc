@@ -7,7 +7,7 @@
 static void on_exit(void);
 static void init(void);
 static long int timescalled= 0;
-
+static FILE *oraclefd = NULL;
 
 bool PREDICTOR::get_prediction(
 	const branch_record_c* br, 
@@ -16,15 +16,28 @@ bool PREDICTOR::get_prediction(
 {
 	// need to only run this code once.
 	static int initial_run = 1;
-	if(!initial_run){
+	if(initial_run){
 		initial_run = 0;
 		init();
 	}
 	bool taken = true;
 
-	if (br->is_conditional)
-		taken = alpha_predict(br);
-
+	if(oraclefd == NULL) {
+		if (br->is_conditional)
+			taken = alpha_predict(br);
+	} else {
+		uint instr_addr = 0xdeadbeef;
+		uint next_addr = 0xdeadbeef;
+		uint actual_addr = 0xdeadbeef;
+		uint status = 0x3f;
+		fscanf(oraclefd, "%08x%08x%08x%02x\n", 
+			&instr_addr,
+			&next_addr,
+			&actual_addr,
+			&status);
+		assert(instr_addr == br->instruction_addr);
+		taken = status & 1;
+	}
 	// the predictor is only checked if the branch was taken, or
 	// it was unconditional. Therefore, we only need to call the
 	// target predictor if we think this was a taken branch, or if
@@ -55,10 +68,20 @@ void PREDICTOR::update_predictor(
 static void on_exit(void)
 {
 	fprintf(stderr, "I got called %ld\n", timescalled);
+	if (oraclefd)
+		pclose(oraclefd);
 	// do nothing
 }
 
 static void init(void)
 {
+	char* oraclefile = getenv("ORACLE");
+	char  oraclecmd[1024];
+	sprintf(oraclecmd, "xzcat %s",oraclefile);
+	if (oraclefile){
+		oraclefd = popen(oraclecmd, "r");
+		printf("Hooking ORACLE... %s\n", oraclefile);
+	}
+
 	atexit(on_exit);
 }
