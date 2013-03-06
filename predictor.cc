@@ -47,7 +47,7 @@ bool PREDICTOR::get_prediction(
 	// target predictor if we think this was a taken branch, or if
 	// the branch is unconditional
 	if (taken)
-		*predicted_target_address = target_predict(br);
+		*predicted_target_address = btb_predict(br);
 
 	
 
@@ -63,7 +63,7 @@ void PREDICTOR::update_predictor(
 	const op_state_c* os, bool taken, uint actual_target_address)
 {
 
-	target_update(br, actual_target_address);
+	btb_update(br, actual_target_address);
 
 	if (br->is_conditional)
 		alpha_update(br, taken);
@@ -77,7 +77,7 @@ static void on_exit(void)
 
 
 	// run the btb destroy function
-	target_destroy();
+	btb_destroy();
 }
 
 static void init(void)
@@ -97,5 +97,5 @@ static void init(void)
 	atexit(on_exit);
 
 	// call the setup functions for the btb:
-	target_setup();
+	btb_setup();
 }
