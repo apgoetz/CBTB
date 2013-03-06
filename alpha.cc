@@ -15,7 +15,6 @@ bool alpha_global_predict(const branch_record_c *br)
 
 void update(const branch_record_c *br, bool taken)
 {
-	return false;
 }
 
 #endif
