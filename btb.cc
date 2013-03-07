@@ -10,7 +10,7 @@ int BTB_TAG_SIZE;
 uint *btb_buffer;
 uint *btb_tags;
 uint *btb_lru;
-
+static uint lastcall;
 int log2(int value)
 {
 	value--;
@@ -30,6 +30,10 @@ uint btb_predict(const branch_record_c *br)
 	uint shiftedindex = index * BTB_NUM_WAYS;
 	uint tag = addr >> BTB_BITSIZE;
 
+	if(br->is_return) {
+		return lastcall;
+	}
+
 	for(int i = 0; i < BTB_TAG_SIZE; i++) {
 		if(btb_tags[shiftedindex+i] == tag)
 			return btb_buffer[shiftedindex+i];		
@@ -43,6 +47,10 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 	uint index = addr & ((1 << BTB_BITSIZE) - 1);
 	uint shiftedindex = index * BTB_NUM_WAYS;
 	uint tag = addr >> BTB_BITSIZE;
+
+	if(br->is_call) {
+		lastcall = br->instruction_next_addr;
+	}
 
 	for (int i = 0; i < BTB_NUM_WAYS; i++) {
 		if (btb_tags[shiftedindex+i] == tag){
@@ -89,7 +97,8 @@ void btb_setup(void)
 
 	printf("BTB size: %d\n",
 	       BTB_SIZE*BTB_NUM_WAYS*BTB_TAG_SIZE + 
-	       BTB_SIZE*BTB_NUM_WAYS*32+BTB_SIZE*log2(2));
+	       BTB_SIZE*BTB_NUM_WAYS*32+
+	       BTB_SIZE*log2(2));
 
 }
 
