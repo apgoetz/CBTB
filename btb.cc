@@ -89,16 +89,16 @@ void btb_setup(void)
 	btb_lru = (uint*)malloc(BTB_SIZE*sizeof(uint));
 
 	for(int i = 0; i < BTB_SIZE*BTB_NUM_WAYS; i++) {
-		btb_tags[i] = 0xffffffff;		
+		btb_tags[i] = 0xffffffff;
 	}
 	for(int i = 0; i < BTB_SIZE; i++) {
-		btb_lru[i] = 0;		
+		btb_lru[i] = 0;
 	}
 
-	printf("BTB size: %d\n",
-	       BTB_SIZE*BTB_NUM_WAYS*BTB_TAG_SIZE + 
-	       BTB_SIZE*BTB_NUM_WAYS*32+
-	       BTB_SIZE*log2(2));
+	fprintf(stderr, "BTB size: %d\n",
+		BTB_SIZE*BTB_NUM_WAYS*BTB_TAG_SIZE + 
+		BTB_SIZE*BTB_NUM_WAYS*32+
+		BTB_SIZE*log2(2));
 
 }
 
