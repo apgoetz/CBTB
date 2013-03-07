@@ -15,6 +15,8 @@ int main()
 	long int num_returns = 0;
 	long int num_calls = 0;
 	long int num_branches = 0;
+	long int missed_calls = 0;
+	long int missed_returns = 0;
 	long int missed_predictions = 0;
 	long int missed_dest = 0;
 	while (scanf("%08x%08x%08x%02x\n", 
@@ -36,9 +38,18 @@ int main()
 		PREDICTOR p;
 		bool thought_taken = p.get_prediction(&br, NULL, &predicted_addr);
 
-		if((predicted_addr != actual_addr) && !(taken || !br.is_conditional))
+
+		if(predicted_addr != actual_addr) {
 			missed_dest++;
-		
+		}
+
+		if(predicted_addr != actual_addr) {
+			if(br.is_call)
+				missed_calls++;
+			if(br.is_return)
+				missed_returns++;
+		}
+
 		if(br.is_conditional && (thought_taken != taken))
 			missed_predictions++;
 
@@ -47,7 +58,9 @@ int main()
 		if (br.is_conditional) num_cond++;
 		else num_uncond++;
 		
-		if (br.is_return) num_returns++;
+		if (br.is_return) {
+			num_returns++;
+		}
 		
 		if(br.is_call) num_calls++;
 	}
@@ -58,4 +71,6 @@ int main()
 	printf("returns:\t%ld\n", num_returns);
 	printf("missed_predictions:\t%ld\n", missed_predictions);
 	printf("missed_targets:\t%ld\n", missed_dest);
+	printf("missed_calls:\t%ld\n", missed_calls);
+	printf("missed_returns:\t%ld\n", missed_returns);
 }

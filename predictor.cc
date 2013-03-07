@@ -47,8 +47,11 @@ bool PREDICTOR::get_prediction(
 	// it was unconditional. Therefore, we only need to call the
 	// target predictor if we think this was a taken branch, or if
 	// the branch is unconditional
-
-	*predicted_target_address = btb_predict(br);
+	
+	if (taken)
+		*predicted_target_address = btb_predict(br);
+	else
+		*predicted_target_address = br->instruction_next_addr;
 
 	
 
@@ -63,12 +66,11 @@ void PREDICTOR::update_predictor(
 	const branch_record_c* br, 
 	const op_state_c* os, bool taken, uint actual_target_address)
 {
-
-	btb_update(br, actual_target_address);
+	if (taken)
+		btb_update(br, actual_target_address);
 
 	if (br->is_conditional)
 		alpha_update(br, taken);
-
 }
 static void on_exit(void)
 {
