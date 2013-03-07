@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-static uint lastcall;
+
 
 int log2(int value)
 {
@@ -105,6 +105,8 @@ public:
 
 
 BTB_CACHE *maincache;
+static uint lastcall;
+static uint nummissed = 0;
 uint btb_predict(const branch_record_c *br)
 {
 	if(br->is_return) {
@@ -125,7 +127,8 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 		lastcall = br->instruction_next_addr;
 	}
 
-	maincache->update(br->instruction_addr, actual_addr);
+	if(!maincache->update(br->instruction_addr, actual_addr))
+		nummissed++;
 }
 
 void getparam(const char* name, int *value) {
@@ -156,5 +159,6 @@ void btb_setup(void)
 void btb_destroy(void)
 {
 	delete maincache;
+	fprintf(stderr, "Unable to cache %d branch targets.\n", nummissed);
 }
 #endif
