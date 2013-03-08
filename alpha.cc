@@ -1,6 +1,6 @@
 #ifndef __ALPHA_CC__
 #define __ALPHA_CC__
-
+#include "util.cc"
 //Local history table, only the least significant 10 bits will be used
 unsigned short local_hist_table[1024];
 //Local prediction bits for the saturated counter for the local branch predictor
@@ -43,4 +43,13 @@ void alpha_update(const branch_record_c *br, bool taken)
 {
 }
 
+void alpha_setup(void) 
+{
+	debug("Setting up ALPHA predictor...\n");
+}
+
+void alpha_destroy(void)
+{
+	debug("Destroying ALPHA predictor...\n");
+}
 #endif

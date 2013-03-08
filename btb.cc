@@ -3,20 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-
-#define log_message(...) do {if(debugmode)fprintf(stderr, __VA_ARGS__);} while(0)
-int log2(int value)
-{
-	value--;
-	if (value == 0)
-		return 1;
-	for(int i = 32; i >= 1; i--) {
-		if(0x80000000 & value)
-			return i;
-		value = value << 1;
-	}
-	return 0;
-}
+#include "util.cc"
 
 class BTB_CACHE {
 private:
@@ -107,7 +94,6 @@ public:
 BTB_CACHE *maincache;
 static uint lastcall;
 static uint nummissed = 0;
-static int debugmode = 0;
 uint btb_predict(const branch_record_c *br)
 {
 	if(br->is_return) {
@@ -132,12 +118,6 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 		nummissed++;
 }
 
-void getparam(const char* name, int *value) {
-	char* tmpval = NULL;
-	tmpval = getenv(name);
-	if (tmpval)
-		*value = atoi(tmpval);
-}
 // setup and destroy functions for the btb predictor
 void btb_setup(void)
 {
@@ -147,19 +127,18 @@ void btb_setup(void)
 	getparam("BTB_BITSIZE", &indexbits);
 	getparam("BTB_NUM_WAYS", &numways);
 	getparam("BTB_DISP_SIZE", &dispsize);
-	getparam("BTB_DEBUG", &debugmode);
 
 	maincache = new BTB_CACHE(indexbits, numways, dispsize);
-	log_message("%d entries by %d ways, %d bit displacements\n", 
+	debug("%d entries by %d ways, %d bit displacements\n", 
 		1 << indexbits, numways, maincache->displacementbits());
 
-	log_message("BTB size: %d\n",maincache->size());
+	debug("BTB size: %d\n",maincache->size());
 
 }
 
 void btb_destroy(void)
 {
 	delete maincache;
-	log_message("Unable to cache %d branch targets.\n", nummissed);
+	debug("Unable to cache %d branch targets.\n", nummissed);
 }
 #endif

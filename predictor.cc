@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "alpha.cc"
 #include "btb.cc"
-
+#include "util.cc"
 // These functions are called once at the begining, and once at the
 // end of the trace
 static void on_exit(void);
@@ -79,12 +79,15 @@ static void on_exit(void)
 		pclose(oraclefd);
 
 
-	// run the btb destroy function
+	// run the  destroy functions:
 	btb_destroy();
+	alpha_destroy();
 }
 
 static void init(void)
 {
+	// determine if we should print debug messages...
+	getparam("BTB_DEBUG", &util_debugmode);
 
 	// If we decided to use an ORACLE, hook the oracle now.
 	char* oraclefile = getenv("ORACLE");
@@ -92,13 +95,14 @@ static void init(void)
 	sprintf(oraclecmd, "xzcat %s",oraclefile);
 	if (oraclefile){
 		oraclefd = popen(oraclecmd, "r");
-		printf("Hooking ORACLE... %s\n", oraclefile);
+		debug("Hooking ORACLE... %s\n", oraclefile);
 	}
 
 	// hook the exit function, so that data structures can be
 	// cleaned up. 
 	atexit(on_exit);
 
-	// call the setup functions for the btb:
+	// call the setup functions:
 	btb_setup();
+	alpha_setup();
 }
