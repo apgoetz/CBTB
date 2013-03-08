@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
+#define log_message(...) do {if(debugmode)fprintf(stderr, __VA_ARGS__);} while(0)
 int log2(int value)
 {
 	value--;
@@ -107,6 +107,7 @@ public:
 BTB_CACHE *maincache;
 static uint lastcall;
 static uint nummissed = 0;
+static int debugmode = 0;
 uint btb_predict(const branch_record_c *br)
 {
 	if(br->is_return) {
@@ -146,19 +147,19 @@ void btb_setup(void)
 	getparam("BTB_BITSIZE", &indexbits);
 	getparam("BTB_NUM_WAYS", &numways);
 	getparam("BTB_DISP_SIZE", &dispsize);
-		
+	getparam("BTB_DEBUG", &debugmode);
 
 	maincache = new BTB_CACHE(indexbits, numways, dispsize);
-	fprintf(stderr, "%d entries by %d ways, %d bit displacements\n", 
+	log_message("%d entries by %d ways, %d bit displacements\n", 
 		1 << indexbits, numways, maincache->displacementbits());
 
-	fprintf(stderr, "BTB size: %d\n",maincache->size());
+	log_message("BTB size: %d\n",maincache->size());
 
 }
 
 void btb_destroy(void)
 {
 	delete maincache;
-	fprintf(stderr, "Unable to cache %d branch targets.\n", nummissed);
+	log_message("Unable to cache %d branch targets.\n", nummissed);
 }
 #endif
