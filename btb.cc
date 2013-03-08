@@ -4,7 +4,99 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "util.cc"
+#include <vector>
+enum WayAlg_t {WAY_RROBIN = 0, WAY_LRU = 1};
 
+
+// picks which way to replace, based on either lru or round robin. The
+// LRU implementation uses counters, but sizes itself with the FSM
+// implementation in order to reduce code size
+class WayPicker {
+private:
+	int numways;	
+	WayAlg_t algorithm;
+	int *counters;
+public:
+	WayPicker(int numways = 1) 
+		: numways(numways), algorithm(WAY_RROBIN), 
+		  counters(new int[numways]) {
+		getparam("BTB_WAY_ALGO", (int*)&algorithm);
+		assert(numways > 0);
+		if (algorithm > WAY_LRU)
+			algorithm = WAY_LRU;
+		else if (algorithm < WAY_RROBIN)
+			algorithm = WAY_RROBIN;
+		for(int i = 0; i < numways; i++)
+			counters[i] = i;
+	}
+	// copy constructor
+	WayPicker(const WayPicker& other) 
+		: numways(other.numways), algorithm(other.algorithm), 
+		  counters(new int[other.numways]){
+		assert(numways > 0);
+		for(int i = 0; i < numways; i++ )
+			counters[i] = other.counters[i];
+		
+	}
+
+	// copy assignment
+	WayPicker & operator= (const WayPicker & other) {
+		if(this != &other)
+		{
+			numways = other.numways;
+			assert(numways > 0);
+			algorithm = other.algorithm;
+			delete[] counters;
+			counters = new int[numways];
+			for(int i = 0; i < numways; i++)
+				counters[i] = other.counters[i];
+		}
+		return *this;
+	}
+	
+	~WayPicker() {
+		delete [] counters;
+	}
+
+	int replace() {
+		assert(numways > 0);
+		if(algorithm == WAY_RROBIN) {
+			int choice = counters[0];			
+			counters[0]++;
+			counters[0] %= numways;
+			return choice;
+		} else {
+			for(int i = 0; i < numways; i++) {
+				if(counters[i] == numways-1) {
+					update(i);
+					return i;
+				}	
+			}
+			assert(0);
+		}
+	}
+
+	void update(int way_used) {
+		assert(numways > 0);
+		if(algorithm == WAY_LRU) {
+			int oldval = counters[way_used];
+			for(int i = 0; i < numways; i++)
+				if (counters[i] < oldval)
+					counters[i]++;
+			counters[way_used] = 0;
+		}
+	}
+	
+	int size() {
+		if (algorithm == WAY_RROBIN)
+			return log2(numways);
+		else
+			return log2(factorial(numways));
+	}
+};
+
+// This class implements a branch target buffer that can store
+// elements in an arbitrary number of ways, 
 class BTB_CACHE {
 private:
 	size_t indexbits;
@@ -14,7 +106,8 @@ private:
 	int m_displacementbits;
 	uint* btb_buffer;
 	uint* btb_tags;
-	uint* btb_lru;
+	std::vector<WayPicker> btb_lru;
+
 
 public:
 	int displacementbits() {
@@ -23,22 +116,17 @@ public:
 		else
 			return m_displacementbits;
 	}
-	BTB_CACHE(int indexbits = 4, int numways = 1, int displacementbits = -1) : indexbits(indexbits), numways(numways), btbsize(1 << indexbits), tagsize(32-indexbits), m_displacementbits(displacementbits) {
+	BTB_CACHE(int indexbits = 4, int numways = 1, int displacementbits = -1) : indexbits(indexbits), numways(numways), btbsize(1 << indexbits), tagsize(32-indexbits), m_displacementbits(displacementbits), btb_lru(btbsize, WayPicker(numways)) {
 		btb_buffer = (uint*)malloc(btbsize*numways*sizeof(uint));
 		btb_tags = (uint*)malloc(btbsize*numways*sizeof(uint));
-		btb_lru = (uint*)malloc(btbsize*sizeof(uint));		
 
 		for(int i = 0; i < indexbits*numways; i++) {
 			btb_tags[i] = 0xffffffff;
-		}
-		for(uint i = 0; i < btbsize; i++) {
-			btb_lru[i] = 0;
 		}
 	}
 	~BTB_CACHE() {
 		free(btb_buffer);
 		free(btb_tags);
-		free(btb_lru);
 	}
 	bool predict(uint instr, uint &target) {
 		uint index = instr & ((1 << indexbits) - 1);
@@ -68,15 +156,16 @@ public:
 		
 		for (uint i = 0; i < numways; i++) {
 			if (btb_tags[shiftedindex+i] == tag){
+				btb_lru[index].update(i);
 				return true;
 			}
 		}	
 
 		// insert into table
-		btb_tags[shiftedindex + btb_lru[index]] = tag;
-		btb_buffer[shiftedindex+ btb_lru[index]] = target;
-		btb_lru[index]++;
-		btb_lru[index] = btb_lru[index] % numways;
+		uint way = btb_lru[index].replace();
+		btb_tags[shiftedindex + way] = tag;
+		btb_buffer[shiftedindex+ way] = target;
+
 		return true;
 	}
 
@@ -84,8 +173,10 @@ public:
 		uint size = 0;
 		size += btbsize * numways * tagsize;
 		size += btbsize * numways* displacementbits();
-		if(numways > 1)
-			size += btbsize*log2(numways);
+		if(numways > 1) {
+			WayPicker tmppicker(numways);
+			size += btbsize*tmppicker.size();
+		}
 		return size;
 	}
 };
@@ -124,11 +215,19 @@ void btb_setup(void)
 	int indexbits = 4;
 	int numways = 1;
 	int dispsize = -1;
+	WayAlg_t way_algo = WAY_RROBIN;
 	getparam("BTB_BITSIZE", &indexbits);
 	getparam("BTB_NUM_WAYS", &numways);
 	getparam("BTB_DISP_SIZE", &dispsize);
-
+	getparam("BTB_WAY_ALGO", (int*)&way_algo);
 	maincache = new BTB_CACHE(indexbits, numways, dispsize);
+
+	debug("Way Algo: ");
+	if(way_algo == WAY_RROBIN)
+		debug("Round Robin\n");
+	else
+		debug("LRU\n");
+	
 	debug("%d entries by %d ways, %d bit displacements\n", 
 		1 << indexbits, numways, maincache->displacementbits());
 
