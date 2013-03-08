@@ -59,6 +59,10 @@ int main()
 		if (br.is_return) {
 			num_returns++;
 		}
+		if (br.is_call) {
+			num_calls++;
+		}
+
 	}
 	printf("tot_branches:\t%ld\n", num_branches);
 	printf("cond_branches:\t%ld\n", num_cond);
