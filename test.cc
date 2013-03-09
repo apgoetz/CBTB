@@ -4,6 +4,16 @@
 #include "predictor.h"
 /* helper program to dump state from gzipped traces.  */
 
+
+long int num_branches = 0;
+
+
+double perc(long int dividend, long int divisor){
+	return 100.0*(double)dividend/(double)divisor;
+}
+double percb(long int val) {
+	return perc(val, num_branches);
+}
 int main()
 {
 	uint instr_addr = 0xdeadbeef;
@@ -14,11 +24,14 @@ int main()
 	long int num_uncond = 0;
 	long int num_returns = 0;
 	long int num_calls = 0;
-	long int num_branches = 0;
+	long int num_indir = 0;
 	long int missed_calls = 0;
 	long int missed_returns = 0;
 	long int missed_predictions = 0;
 	long int missed_dest = 0;
+	long int missed_cond = 0;
+	long int missed_uncond = 0;
+	long int missed_indir = 0;
 	while (scanf("%08x%08x%08x%02x\n", 
 		     &instr_addr,
 		     &next_addr,
@@ -46,6 +59,13 @@ int main()
 				missed_calls++;
 			if(br.is_return)
 				missed_returns++;
+			if(br.is_conditional)
+				missed_cond++;
+			else
+				missed_uncond++;
+			if(br.is_indirect)
+				missed_indir++;
+	
 		}
 
 		if(br.is_conditional && (thought_taken != taken))
@@ -62,16 +82,35 @@ int main()
 		if (br.is_call) {
 			num_calls++;
 		}
+		if(br.is_indirect) {
+			num_indir++;
+		}
 
 	}
-	printf("tot_branches:       %8ld\n", num_branches);
-	printf("cond_branches:      %8ld\n", num_cond);
-	printf("uncond_branches:    %8ld\n", num_uncond);
-	printf("calls:              %8ld\n", num_calls);
-	printf("returns:            %8ld\n", num_returns);
-	printf("missed_predictions: %8ld\n", missed_predictions);
-	printf("missed_targets:     %8ld\n", missed_dest);
-	printf("missed t per 1000:  %7.3f\n", 1000.0*(double)missed_dest/(double)num_branches);
-	printf("missed_calls:       %8ld\n", missed_calls);
-	printf("missed_returns:     %8ld\n", missed_returns);
+	printf("tot_branches:       %8ld   %3.3f\n", 
+		num_branches, percb(num_branches));
+	printf("cond_branches:      %8ld   %3.3f\n", 
+		num_cond, percb(num_cond));
+	printf("uncond_branches:    %8ld   %3.3f\n", 
+		num_uncond, percb(num_uncond));
+	printf("calls:              %8ld   %3.3f\n", 
+		num_calls, percb(num_calls));
+	printf("returns:            %8ld   %3.3f\n", 
+		num_returns, percb(num_returns));
+	printf("indir:              %8ld   %3.3f\n", 
+		num_indir, percb(num_indir));
+	printf("missed_predictions: %8ld   %3.3f\n", 
+		missed_predictions, percb(missed_predictions));
+	printf("missed_targets:     %8ld   %3.3f\n", 
+		missed_dest, percb(missed_dest));
+	printf("missed_cond:        %8ld   %3.3f\n",
+		missed_cond, perc(missed_cond, missed_dest));
+	printf("missed_uncond:      %8ld   %3.3f\n",
+		missed_uncond, perc(missed_uncond, missed_dest));
+	printf("missed_returns:     %8ld   %3.3f\n",
+		missed_indir, perc(missed_indir, missed_dest));
+	printf("missed_calls:       %8ld   %3.3f\n", 
+		missed_calls, perc(missed_calls, missed_dest));
+	printf("missed_returns:     %8ld   %3.3f\n",
+		missed_returns, perc(missed_returns, missed_dest));
 }

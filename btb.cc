@@ -168,7 +168,7 @@ public:
 		btb_buffer = (uint*)malloc(btbsize*numways*sizeof(uint));
 		btb_tags = (uint*)malloc(btbsize*numways*sizeof(uint));
 
-		for(int i = 0; i < indexbits*numways; i++) {
+		for(uint i = 0; i < btbsize*numways; i++) {
 			btb_tags[i] = 0xffffffff;
 		}
 	}
@@ -238,6 +238,10 @@ static uint ret_underflow = 0;
 uint btb_predict(const branch_record_c *br)
 {
 	uint target;
+
+	if(!maincache->predict(br->instruction_addr, target))
+		target = br->instruction_next_addr;
+
 	if(br->is_return) {
 		if(!callqueue.ret(&target)) {
 			ret_underflow++;
@@ -246,8 +250,6 @@ uint btb_predict(const branch_record_c *br)
 		}
 	}
 
-	if(!maincache->predict(br->instruction_addr, target))
-		target = br->instruction_next_addr;
 
 	return target;
 }
@@ -286,8 +288,8 @@ void btb_setup(void)
 	debug("%d entries by %d ways, %d bit displacements\n", 
 		1 << indexbits, numways, maincache->displacementbits());
 
-	debug("BTB size: %d\n",maincache->size());
-	debug("Call Buffer size: %d\n", callqueue.size());
+	debug("BTB size: %d\n",maincache->size() + callqueue.size());
+
 
 }
 
