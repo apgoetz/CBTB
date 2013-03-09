@@ -32,6 +32,10 @@ int main()
 	long int missed_cond = 0;
 	long int missed_uncond = 0;
 	long int missed_indir = 0;
+	PREDICTOR p;
+	branch_record_c br;
+	uint predicted_addr;
+	p.get_prediction(&br, NULL, &predicted_addr);
 	while (scanf("%08x%08x%08x%02x\n", 
 		     &instr_addr,
 		     &next_addr,
@@ -39,16 +43,16 @@ int main()
 		     &status) == 4) {
 
 		num_branches++;
-		branch_record_c br;
+
 		br.instruction_addr = instr_addr;
 		br.instruction_next_addr = next_addr;
 		br.is_indirect = status & 0b10000;
 		br.is_conditional = status & 0b1000;
 		br.is_call = status & 0b100;
 		br.is_return = status & 0b10;
-		uint predicted_addr;
+
 		bool taken = status & 0b1;
-		PREDICTOR p;
+
 		bool thought_taken = p.get_prediction(&br, NULL, &predicted_addr);
 
 
@@ -107,7 +111,7 @@ int main()
 		missed_cond, perc(missed_cond, missed_dest));
 	printf("missed_uncond:      %8ld   %3.3f\n",
 		missed_uncond, perc(missed_uncond, missed_dest));
-	printf("missed_returns:     %8ld   %3.3f\n",
+	printf("missed_indir:       %8ld   %3.3f\n",
 		missed_indir, perc(missed_indir, missed_dest));
 	printf("missed_calls:       %8ld   %3.3f\n", 
 		missed_calls, perc(missed_calls, missed_dest));

@@ -147,7 +147,7 @@ public:
 // elements in an arbitrary number of ways, 
 class BTB_CACHE {
 private:
-	size_t indexbits;
+	int indexbits;
 	size_t numways;
 	size_t btbsize;
 	size_t tagsize;
@@ -164,7 +164,15 @@ public:
 		else
 			return m_displacementbits;
 	}
-	BTB_CACHE(int indexbits = 4, int numways = 1, int displacementbits = -1) : indexbits(indexbits), numways(numways), btbsize(1 << indexbits), tagsize(32-indexbits), m_displacementbits(displacementbits), btb_lru(btbsize, WayPicker(numways)) {
+
+	BTB_CACHE() 
+		: indexbits(-1) {
+	}
+	BTB_CACHE(int indexbits, int numways = 1, int displacementbits = -1) 
+		: indexbits(indexbits), numways(numways), 
+		  btbsize(1 << indexbits), 
+		  tagsize(32-indexbits), m_displacementbits(displacementbits), 
+		  btb_lru(btbsize, WayPicker(numways)) {		
 		btb_buffer = (uint*)malloc(btbsize*numways*sizeof(uint));
 		btb_tags = (uint*)malloc(btbsize*numways*sizeof(uint));
 
@@ -173,10 +181,16 @@ public:
 		}
 	}
 	~BTB_CACHE() {
+		if (indexbits < 0)
+			return;
 		free(btb_buffer);
 		free(btb_tags);
 	}
 	bool predict(uint instr, uint &target) {
+
+		if(indexbits < 0)
+			return false;
+
 		uint index = instr & ((1 << indexbits) - 1);
 		uint shiftedindex = index * numways;
 		uint tag = instr >> indexbits;
@@ -190,6 +204,10 @@ public:
 		return false;
 	}
 	bool update(uint addr, uint target) {
+
+		if(indexbits < 0)
+			return false;
+
 		uint index = addr & ((1 << indexbits) - 1);
 		uint shiftedindex = index * numways;
 		uint tag = addr >> indexbits;
@@ -218,6 +236,9 @@ public:
 	}
 
 	uint size(void) {
+
+		if(indexbits < 0)
+			return 0;
 		uint size = 0;
 		size += btbsize * numways * tagsize;
 		size += btbsize * numways* displacementbits();
@@ -225,12 +246,15 @@ public:
 			WayPicker tmppicker(numways);
 			size += btbsize*tmppicker.size();
 		}
+		if(numways > 8)
+			size *=2;
 		return size;
 	}
 };
 
 
 BTB_CACHE *maincache;
+BTB_CACHE *dispcache;
 static CallHistoryQueue callqueue;
 static uint nummissed = 0;
 static uint call_overflow = 0;
@@ -238,9 +262,13 @@ static uint ret_underflow = 0;
 uint btb_predict(const branch_record_c *br)
 {
 	uint target;
-
-	if(!maincache->predict(br->instruction_addr, target))
-		target = br->instruction_next_addr;
+	// check the displacement cache first
+	if(!dispcache->predict(br->instruction_addr, target))
+		// If it wasn't in the displacement cache, check the main cache
+		if(!maincache->predict(br->instruction_addr, target))
+			// if we still failed, we do not have it in
+			// the cache. Return the next address instead. 
+			target = br->instruction_next_addr;
 
 	if(br->is_return) {
 		if(!callqueue.ret(&target)) {
@@ -262,33 +290,48 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 			call_overflow++;
 	}
 
-	if(!maincache->update(br->instruction_addr, actual_addr))
+	// if we cannot place the address in the displacement cache,
+	// place it in the main cache (hierarchical caches!)
+	if(!dispcache->update(br->instruction_addr, actual_addr)) {
 		nummissed++;
+		maincache->update(br->instruction_addr, actual_addr);
+	}
 }
 
 // setup and destroy functions for the btb predictor
 void btb_setup(void)
 {
-	int indexbits = 4;
-	int numways = 1;
-	int dispsize = -1;
+	int main_size = 0;
+	int main_ways = 1;
+	int disp_entries = 16;
+	int disp_size = 0;
+	int disp_ways = 1;
 	WayAlg_t way_algo = WAY_RROBIN;
-	getparam("BTB_BITSIZE", &indexbits);
-	getparam("BTB_NUM_WAYS", &numways);
-	getparam("BTB_DISP_SIZE", &dispsize);
+	getparam("BTB_MAIN_SIZE", &main_size);
+	getparam("BTB_MAIN_WAYS", &main_ways);
+	getparam("BTB_DISP_ENTRIES", &disp_entries);
+	getparam("BTB_DISP_SIZE", &disp_size);
+	getparam("BTB_DISP_WAYS", &disp_ways);
 	getparam("BTB_WAY_ALGO", (int*)&way_algo);
-	maincache = new BTB_CACHE(indexbits, numways, dispsize);
-
+	maincache = new BTB_CACHE(main_size, main_ways);
+	if (disp_size >= 0)
+		dispcache = new BTB_CACHE(disp_size, disp_ways, disp_entries);
+	else 
+		dispcache = new BTB_CACHE();
 	debug("Way Algo: ");
 	if(way_algo == WAY_RROBIN)
 		debug("Round Robin\n");
 	else
 		debug("LRU\n");
 	
-	debug("%d entries by %d ways, %d bit displacements\n", 
-		1 << indexbits, numways, maincache->displacementbits());
-
-	debug("BTB size: %d\n",maincache->size() + callqueue.size());
+	debug("Main: %d entries by %d ways, %d bit displacements\n", 
+		1 << main_size, main_ways, maincache->displacementbits());
+	if(disp_size >= 0)
+	debug("Displacement: %d entries by %d ways, %d bit displacements\n", 
+		1 << disp_size, disp_ways, dispcache->displacementbits());
+	else
+		debug("No displacement cache.\n");
+	debug("BTB size: %d\n",dispcache->size() + maincache->size() + callqueue.size());
 
 
 }
@@ -296,6 +339,7 @@ void btb_setup(void)
 void btb_destroy(void)
 {
 	delete maincache;
+	delete dispcache;
 	debug("Unable to cache %d branch targets.\n", nummissed);
 	debug("max func stack size: %d\n", callqueue.maxsize);
 	debug("call overflow: %d\n", call_overflow);

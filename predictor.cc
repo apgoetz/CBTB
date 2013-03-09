@@ -49,12 +49,7 @@ bool PREDICTOR::get_prediction(
 	// target predictor if we think this was a taken branch, or if
 	// the branch is unconditional
 	
-	if (taken)
-		*predicted_target_address = btb_predict(br);
-	else
-		*predicted_target_address = br->instruction_next_addr;
-
-	
+	*predicted_target_address = btb_predict(br);
 
 	timescalled++;	
 	return taken;
@@ -68,8 +63,7 @@ void PREDICTOR::update_predictor(
 	const op_state_c* os, bool taken, uint actual_target_address)
 {
 
-	if (taken)
-		btb_update(br, actual_target_address);
+	btb_update(br, actual_target_address);
 
 	if (br->is_conditional)
 		alpha_update(br, taken);
