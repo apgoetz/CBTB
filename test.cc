@@ -64,13 +64,14 @@ int main()
 		}
 
 	}
-	printf("tot_branches:\t%ld\n", num_branches);
-	printf("cond_branches:\t%ld\n", num_cond);
-	printf("uncond_branches:\t%ld\n", num_uncond);
-	printf("calls:\t%ld\n", num_calls);
-	printf("returns:\t%ld\n", num_returns);
-	printf("missed_predictions:\t%ld\n", missed_predictions);
-	printf("missed_targets:\t%ld\n", missed_dest);
-	printf("missed_calls:\t%ld\n", missed_calls);
-	printf("missed_returns:\t%ld\n", missed_returns);
+	printf("tot_branches:       %8ld\n", num_branches);
+	printf("cond_branches:      %8ld\n", num_cond);
+	printf("uncond_branches:    %8ld\n", num_uncond);
+	printf("calls:              %8ld\n", num_calls);
+	printf("returns:            %8ld\n", num_returns);
+	printf("missed_predictions: %8ld\n", missed_predictions);
+	printf("missed_targets:     %8ld\n", missed_dest);
+	printf("missed t per 1000:  %7.3f\n", 1000.0*(double)missed_dest/(double)num_branches);
+	printf("missed_calls:       %8ld\n", missed_calls);
+	printf("missed_returns:     %8ld\n", missed_returns);
 }

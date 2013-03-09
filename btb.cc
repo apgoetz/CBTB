@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "util.cc"
 #include <vector>
+#include <deque>
 enum WayAlg_t {WAY_RROBIN = 0, WAY_LRU = 1};
 
 
@@ -92,6 +93,53 @@ public:
 			return log2(numways);
 		else
 			return log2(factorial(numways));
+	}
+};
+
+class CallHistoryQueue {
+private:
+	std::deque<uint> callqueue;
+	int capacity;
+	
+public:
+	uint maxsize;
+	CallHistoryQueue()
+		: capacity(0), maxsize(0) {
+		getparam("BTB_FUNC_CAP", (int*)&capacity);
+	}
+	
+	bool call(uint addr) {
+		if (capacity == 0)
+			return false;
+		callqueue.push_front(addr);
+		uint size = callqueue.size();
+		bool retval = false;
+		if(capacity > 0 && (int)size > capacity) {
+			callqueue.pop_back();
+			retval = true;
+		}
+		if(size > maxsize)
+			maxsize = size;
+
+		return retval;
+	}
+	
+	bool ret(uint * addr) {
+		if(callqueue.size() > 0) {
+			*addr = callqueue.front();
+			callqueue.pop_front();
+			return true;
+		}
+		return false;
+	}
+	
+	int size() {
+		if (capacity > 0)
+			return 32*capacity + 2*log2(capacity);
+		else if (capacity < 0)
+			return -1;
+		else
+			return 0;
 	}
 };
 
@@ -183,15 +231,21 @@ public:
 
 
 BTB_CACHE *maincache;
-static uint lastcall;
+static CallHistoryQueue callqueue;
 static uint nummissed = 0;
+static uint call_overflow = 0;
+static uint ret_underflow = 0;
 uint btb_predict(const branch_record_c *br)
 {
+	uint target;
 	if(br->is_return) {
-		return lastcall;
+		if(!callqueue.ret(&target)) {
+			ret_underflow++;
+		} else {
+			return target;
+		}
 	}
 
-	uint target;
 	if(!maincache->predict(br->instruction_addr, target))
 		target = br->instruction_next_addr;
 
@@ -202,7 +256,8 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 {
 
 	if(br->is_call) {
-		lastcall = br->instruction_next_addr;
+		if(callqueue.call(br->instruction_next_addr))
+			call_overflow++;
 	}
 
 	if(!maincache->update(br->instruction_addr, actual_addr))
@@ -232,6 +287,7 @@ void btb_setup(void)
 		1 << indexbits, numways, maincache->displacementbits());
 
 	debug("BTB size: %d\n",maincache->size());
+	debug("Call Buffer size: %d\n", callqueue.size());
 
 }
 
@@ -239,5 +295,8 @@ void btb_destroy(void)
 {
 	delete maincache;
 	debug("Unable to cache %d branch targets.\n", nummissed);
+	debug("max func stack size: %d\n", callqueue.maxsize);
+	debug("call overflow: %d\n", call_overflow);
+	debug("ret underflow: %d\n", ret_underflow);
 }
 #endif

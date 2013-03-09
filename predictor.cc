@@ -66,6 +66,7 @@ void PREDICTOR::update_predictor(
 	const branch_record_c* br, 
 	const op_state_c* os, bool taken, uint actual_target_address)
 {
+
 	if (taken)
 		btb_update(br, actual_target_address);
 
@@ -77,7 +78,6 @@ static void on_exit(void)
 	// if we are using an oracle, close the pipe.
 	if (oraclefd)
 		pclose(oraclefd);
-
 
 	// run the  destroy functions:
 	btb_destroy();
