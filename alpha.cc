@@ -34,18 +34,44 @@ bool alpha_global_predict(const branch_record_c *br)
 	return false;
 }
 
+//This is the predictor predictor AKA the Choice predictor
+//uses the global history to determine which predictor to use
 bool alpha_predict(const branch_record_c *br)
 {
 	return false;
 }
 
+//updates the path history to reflect whether the last branch
+//was actually taken
 void alpha_update(const branch_record_c *br, bool taken)
 {
+
 }
 
 void alpha_setup(void) 
 {
+	int i = 0;
 	debug("Setting up ALPHA predictor...\n");
+
+	//initialize the tables for the local predictor
+	for(i = 0; i < 1024; i++)
+	{
+		local_hist_table[i] = 0;
+		local_predict[i] = 0;
+	}
+
+	//initialize the global prediction table
+	//and the choice prediction table
+	for(i = 0; i < 4096; i++)
+	{
+		global_predict[i] = 0;
+		//sets the default choice prediction to weakly not taken
+		choice_predict[i] = 2;
+	}
+
+	//initializes the path history to all not taken by default
+	path_history = 0;
+	
 }
 
 void alpha_destroy(void)
