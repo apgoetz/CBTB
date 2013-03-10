@@ -21,6 +21,8 @@ int main()
 	uint actual_addr = 0xdeadbeef;
 	uint status = 0x3f;
 	long int num_cond = 0;
+	long int num_taken = 0;
+	long int num_untaken = 0;
 	long int num_uncond = 0;
 	long int num_returns = 0;
 	long int num_calls = 0;
@@ -35,7 +37,6 @@ int main()
 	PREDICTOR p;
 	branch_record_c br;
 	uint predicted_addr;
-	p.get_prediction(&br, NULL, &predicted_addr);
 	while (scanf("%08x%08x%08x%02x\n", 
 		     &instr_addr,
 		     &next_addr,
@@ -89,6 +90,10 @@ int main()
 		if(br.is_indirect) {
 			num_indir++;
 		}
+		if (taken)
+			num_taken++;
+		else
+			num_untaken++;
 
 	}
 	printf("tot_branches:       %8ld   %3.3f\n", 
@@ -97,6 +102,10 @@ int main()
 		num_cond, percb(num_cond));
 	printf("uncond_branches:    %8ld   %3.3f\n", 
 		num_uncond, percb(num_uncond));
+	printf("taken:              %8ld   %3.3f\n", 
+		num_taken, percb(num_taken));
+	printf("untaken:            %8ld   %3.3f\n", 
+		num_untaken, percb(num_untaken));
 	printf("calls:              %8ld   %3.3f\n", 
 		num_calls, percb(num_calls));
 	printf("returns:            %8ld   %3.3f\n", 
