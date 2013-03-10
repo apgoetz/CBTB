@@ -44,15 +44,12 @@ bool PREDICTOR::get_prediction(
 		taken = status & 1;
 		if(addr_hist.count(br->instruction_addr)){
 			*predicted_target_address = actual_addr;
-			return false;
+			return taken;
 		} else {
 			*predicted_target_address = br->instruction_next_addr;
 			addr_hist.insert(br->instruction_addr);
-			return taken;
+			return false;
 		}
-
-//		 *predicted_target_address = actual_addr;
-		//return taken;
 	}
 
 	// the predictor is only checked if the branch was taken, or
