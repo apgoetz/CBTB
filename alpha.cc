@@ -24,13 +24,14 @@ unsigned short path_history;
 //predicts taken/not taken branch based on local history
 bool alpha_local_predict(const branch_record_c *br)
 {
-	
+	debug("alpha_local_predict called\n");
 	return false;
 }
 
 //predicts taken/not taken branch based on global history
 bool alpha_global_predict(const branch_record_c *br)
 {
+	debug("alpha_global_predict called\n");
 	return false;
 }
 
@@ -38,13 +39,34 @@ bool alpha_global_predict(const branch_record_c *br)
 //uses the global history to determine which predictor to use
 bool alpha_predict(const branch_record_c *br)
 {
-	return false;
+	bool taken;
+
+	if(choice_predict[path_history] >= 2)
+	{
+		taken = alpha_global_predict(br);
+		if(choice_predict[path_history] < 3)
+			choice_predict[path_history]++;
+	}
+	else
+	{
+		taken = alpha_local_predict(br);
+		if(choice_predict[path_history] > 0)
+			choice_predict[path_history]--;
+	}
+
+	return taken;
 }
 
 //updates the path history to reflect whether the last branch
 //was actually taken
 void alpha_update(const branch_record_c *br, bool taken)
 {
+	//shift left by one and mask off the last 12 bits
+	//so that any bits above the 12th will be zero
+	path_history = (path_history << 1) & 0xFFF;
+	
+	if(taken)
+		path_history++;
 
 }
 
