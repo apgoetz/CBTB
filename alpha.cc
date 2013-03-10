@@ -25,14 +25,34 @@ unsigned short path_history;
 bool alpha_local_predict(const branch_record_c *br)
 {
 	debug("alpha_local_predict called\n");
-	return false;
+
+	//grabs bits 0-9 of the PC to index the table
+	unsigned int PC = ((br->instruction_addr) & 0x3FF);
+
+	//grabs the history in the table
+	unsigned int history = local_hist_table[PC];
+	//printf("history = %u\n", history);
+
+	//predict true if the counter is more than 4
+	//i.e. (weakly|strongly) taken
+	if(local_predict[history] >= 4)
+		return true;
+
+	else
+		return false;
+	
 }
 
 //predicts taken/not taken branch based on global history
 bool alpha_global_predict(const branch_record_c *br)
 {
 	debug("alpha_global_predict called\n");
-	return false;
+
+	if(global_predict[path_history] >= 2)
+		return true;
+
+	else
+		return false;
 }
 
 //This is the predictor predictor AKA the Choice predictor
@@ -44,14 +64,10 @@ bool alpha_predict(const branch_record_c *br)
 	if(choice_predict[path_history] >= 2)
 	{
 		taken = alpha_global_predict(br);
-		if(choice_predict[path_history] < 3)
-			choice_predict[path_history]++;
 	}
 	else
 	{
 		taken = alpha_local_predict(br);
-		if(choice_predict[path_history] > 0)
-			choice_predict[path_history]--;
 	}
 
 	return taken;
@@ -61,14 +77,36 @@ bool alpha_predict(const branch_record_c *br)
 //was actually taken
 void alpha_update(const branch_record_c *br, bool taken)
 {
+
+	//unsigned int PC = (br->instruction_addr) & 0x3FF;
+
+	unsigned int global = global_predict[path_history];
+	unsigned int local = local_predict[local_hist_table[path_history & 0x3FF]];
+
+	//updates the global predictor saturated counter
+	if(taken && global < 3)
+		global_predict[path_history]++;
+
+	else if(!taken && global > 0)
+		global_predict[path_history]--;
+		
+
+	//updates the local predictor saturated counter
+	if(taken && local < 3)
+		local_predict[local_hist_table[path_history & 0x3FF]]--;
+
+	else if(!taken && local > 0)
+		local_predict[local_hist_table[path_history & 0x3FF]]++;
+	
 	//shift left by one and mask off the last 12 bits
 	//so that any bits above the 12th will be zero
-	path_history = (path_history << 1) & 0xFFF;
+	path_history = (path_history << 1) & 0x0FFF;
 	
 	if(taken)
 		path_history++;
-
 }
+
+
 
 void alpha_setup(void) 
 {
@@ -88,7 +126,7 @@ void alpha_setup(void)
 	{
 		global_predict[i] = 0;
 		//sets the default choice prediction to weakly not taken
-		choice_predict[i] = 2;
+		choice_predict[i] = 1;
 	}
 
 	//initializes the path history to all not taken by default
