@@ -103,25 +103,26 @@ private:
 	
 public:
 	uint maxsize;
+	uint call_overflow;
+	uint ret_underflow;
 	CallHistoryQueue()
-		: capacity(0), maxsize(0) {
+		: capacity(0), maxsize(0), call_overflow(0), ret_underflow(0) {
 		getparam("BTB_FUNC_CAP", (int*)&capacity);
 	}
 	
-	bool call(uint addr) {
-		if (capacity == 0)
-			return false;
+	void call(uint addr) {
+		if (capacity == 0) {
+			call_overflow++;
+			return;
+		}
 		callqueue.push_front(addr);
 		uint size = callqueue.size();
-		bool retval = false;
 		if(capacity > 0 && (int)size > capacity) {
 			callqueue.pop_back();
-			retval = true;
+			call_overflow++;
 		}
 		if(size > maxsize)
 			maxsize = size;
-
-		return retval;
 	}
 	
 	bool ret(uint * addr) {
@@ -129,8 +130,10 @@ public:
 			*addr = callqueue.front();
 			callqueue.pop_front();
 			return true;
-		}
+		} 
+		ret_underflow++;
 		return false;
+
 	}
 	
 	int size() {
@@ -151,6 +154,7 @@ private:
 	size_t numways;
 	size_t btbsize;
 	size_t tagsize;
+
 	int m_displacementbits;
 	uint* btb_buffer;
 	uint* btb_tags;
@@ -158,6 +162,7 @@ private:
 
 
 public:
+	uint nummissed;
 	int displacementbits() {
 		if (m_displacementbits < 0 || m_displacementbits >= 32)
 			return 32;
@@ -171,8 +176,10 @@ public:
 	BTB_CACHE(int indexbits, int numways = 1, int displacementbits = -1) 
 		: indexbits(indexbits), numways(numways), 
 		  btbsize(1 << indexbits), 
-		  tagsize(32-indexbits), m_displacementbits(displacementbits), 
-		  btb_lru(btbsize, WayPicker(numways)) {		
+		  tagsize(32-indexbits),
+		  m_displacementbits(displacementbits), 
+		  btb_lru(btbsize, WayPicker(numways)),
+		  nummissed(0){		
 		btb_buffer = (uint*)malloc(btbsize*numways*sizeof(uint));
 		btb_tags = (uint*)malloc(btbsize*numways*sizeof(uint));
 
@@ -216,8 +223,10 @@ public:
 			uint delta = target - addr;
 			int64_t maxdisp = ((int64_t)1 << (m_displacementbits - 1)) - 1;
 			int64_t mindisp = -maxdisp - 1;
-			if (delta > maxdisp || delta < mindisp)
+			if (delta > maxdisp || delta < mindisp) {
+				nummissed++;
 				return false;
+			}
 		}
 		
 		for (uint i = 0; i < numways; i++) {
@@ -256,9 +265,6 @@ public:
 BTB_CACHE *maincache;
 BTB_CACHE *dispcache;
 static CallHistoryQueue callqueue;
-static uint nummissed = 0;
-static uint call_overflow = 0;
-static uint ret_underflow = 0;
 uint btb_predict(const branch_record_c *br)
 {
 	uint target;
@@ -271,11 +277,8 @@ uint btb_predict(const branch_record_c *br)
 			target = br->instruction_next_addr;
 
 	if(br->is_return) {
-		if(!callqueue.ret(&target)) {
-			ret_underflow++;
-		} else {
+		if(callqueue.ret(&target))
 			return target;
-		}
 	}
 
 
@@ -285,15 +288,12 @@ uint btb_predict(const branch_record_c *br)
 void btb_update(const branch_record_c *br, uint actual_addr)
 {
 
-	if(br->is_call) {
-		if(callqueue.call(br->instruction_next_addr))
-			call_overflow++;
-	}
+	if(br->is_call)
+		callqueue.call(br->instruction_next_addr);
 
 	// if we cannot place the address in the displacement cache,
 	// place it in the main cache (hierarchical caches!)
 	if(!dispcache->update(br->instruction_addr, actual_addr)) {
-		nummissed++;
 		maincache->update(br->instruction_addr, actual_addr);
 	}
 }
@@ -340,9 +340,9 @@ void btb_destroy(void)
 {
 	delete maincache;
 	delete dispcache;
-	debug("Unable to cache %d branch targets.\n", nummissed);
+	debug("Unable to cache %d branch targets.\n", dispcache->nummissed);
 	debug("max func stack size: %d\n", callqueue.maxsize);
-	debug("call overflow: %d\n", call_overflow);
-	debug("ret underflow: %d\n", ret_underflow);
+	debug("call overflow: %d\n", callqueue.call_overflow);
+	debug("ret underflow: %d\n", callqueue.ret_underflow);
 }
 #endif

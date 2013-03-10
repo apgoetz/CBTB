@@ -11,7 +11,6 @@
 static void on_exit(void);
 static void init(void);
 
-static long int timescalled= 0;
 static FILE *oraclefd = NULL;
 static std::set<uint> addr_hist;
 bool PREDICTOR::get_prediction(
@@ -58,7 +57,6 @@ bool PREDICTOR::get_prediction(
 	// the branch is unconditional
 	*predicted_target_address = btb_predict(br);
 
-	timescalled++;	
 	return taken;
 }
 
