@@ -5,6 +5,7 @@
 #include "alpha.cc"
 #include "btb.cc"
 #include "util.cc"
+#include <set>
 // These functions are called once at the begining, and once at the
 // end of the trace
 static void on_exit(void);
@@ -12,7 +13,7 @@ static void init(void);
 
 static long int timescalled= 0;
 static FILE *oraclefd = NULL;
-
+static std::set<uint> addr_hist;
 bool PREDICTOR::get_prediction(
 	const branch_record_c* br, 
 	const op_state_c* os, 
@@ -41,14 +42,23 @@ bool PREDICTOR::get_prediction(
 			&status);
 		assert(instr_addr == br->instruction_addr);
 		taken = status & 1;
+		if(addr_hist.count(br->instruction_addr)){
+			*predicted_target_address = actual_addr;
+			return false;
+		} else {
+			*predicted_target_address = br->instruction_next_addr;
+			addr_hist.insert(br->instruction_addr);
+			return taken;
+		}
+
 //		 *predicted_target_address = actual_addr;
 		//return taken;
 	}
+
 	// the predictor is only checked if the branch was taken, or
 	// it was unconditional. Therefore, we only need to call the
 	// target predictor if we think this was a taken branch, or if
 	// the branch is unconditional
-	
 	*predicted_target_address = btb_predict(br);
 
 	timescalled++;	
