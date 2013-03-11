@@ -20,6 +20,9 @@ unsigned char choice_predict[4096];
 //being the most recent branch
 unsigned short path_history;
 
+//predictor chosen for the previous prediction
+// true means global, false means local
+bool current_predictor;
 
 //predicts taken/not taken branch based on local history
 bool alpha_local_predict(const branch_record_c *br)
@@ -31,7 +34,7 @@ bool alpha_local_predict(const branch_record_c *br)
 
 	//grabs the history in the table
 	unsigned int history = local_hist_table[PC];
-	//printf("history = %u\n", history);
+	//printf("PC = %u\nhistory = %u\n", PC, history);
 
 	//predict true if the counter is more than 4
 	//i.e. (weakly|strongly) taken
@@ -64,10 +67,12 @@ bool alpha_predict(const branch_record_c *br)
 	if(choice_predict[path_history] >= 2)
 	{
 		taken = alpha_global_predict(br);
+		current_predictor = true;
 	}
 	else
 	{
 		taken = alpha_local_predict(br);
+		current_predictor = false;
 	}
 
 	return taken;
@@ -78,32 +83,69 @@ bool alpha_predict(const branch_record_c *br)
 void alpha_update(const branch_record_c *br, bool taken)
 {
 
-	//unsigned int PC = (br->instruction_addr) & 0x3FF;
-
+	unsigned int PC = (br->instruction_addr) & 0x3FF;
 	unsigned int global = global_predict[path_history];
-	unsigned int local = local_predict[local_hist_table[path_history & 0x3FF]];
+	unsigned int local = local_predict[local_hist_table[PC]];
 
+	//Choice Predictor:
+	//if the current predictor is global, see if the prediction was correct
+	//same if it was the local predictor
+	if(current_predictor)
+	{
+		if(choice_predict[path_history] == 2)
+		{
+			//only increment prediction matches
+			if(taken && global >= 2)
+				choice_predict[path_history]++;
+			else if(!taken && global < 2)
+				choice_predict[path_history]++;
+		}
+		//decrement if prediction was incorrect
+		else
+			choice_predict[path_history]--;
+	}
+	else
+	{
+		if(choice_predict[path_history] == 1)
+		{
+			//only decrement if prediction matches
+			if(taken && local >= 4)
+				choice_predict[path_history]--;
+			else if(!taken && local < 4)
+				choice_predict[path_history]--;
+		}
+		//increment if prediction was incorrect
+		else
+			choice_predict[path_history]++;
+
+	}
+
+	//Global Predictor:
 	//updates the global predictor saturated counter
 	if(taken && global < 3)
 		global_predict[path_history]++;
 
 	else if(!taken && global > 0)
 		global_predict[path_history]--;
-		
 
+	//Local Predictor:
 	//updates the local predictor saturated counter
 	if(taken && local < 3)
-		local_predict[local_hist_table[path_history & 0x3FF]]--;
+		local_predict[local_hist_table[PC]]++;
 
 	else if(!taken && local > 0)
-		local_predict[local_hist_table[path_history & 0x3FF]]++;
-	
+		local_predict[local_hist_table[PC]]--;
+
+	//Path History:
 	//shift left by one and mask off the last 12 bits
 	//so that any bits above the 12th will be zero
 	path_history = (path_history << 1) & 0x0FFF;
 	
 	if(taken)
 		path_history++;
+
+	//update the local history table with the newest history
+	local_hist_table[PC] = path_history & 0x3FF;
 }
 
 
@@ -117,20 +159,24 @@ void alpha_setup(void)
 	for(i = 0; i < 1024; i++)
 	{
 		local_hist_table[i] = 0;
-		local_predict[i] = 0;
+		local_predict[i] = 4;
 	}
 
 	//initialize the global prediction table
 	//and the choice prediction table
 	for(i = 0; i < 4096; i++)
 	{
-		global_predict[i] = 0;
+		global_predict[i] = 1;
 		//sets the default choice prediction to weakly not taken
-		choice_predict[i] = 1;
+		choice_predict[i] = 2;
 	}
 
 	//initializes the path history to all not taken by default
 	path_history = 0;
+
+	//default predictor for choice predictor
+	//true = global, false = local
+	current_predictor = true;
 	
 }
 
