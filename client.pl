@@ -21,11 +21,37 @@ my $hostname = `hostname -f`;
 chomp $hostname;
 
 
-my @filenames = ("traces/DIST-INT-1", "traces/DIST-MM-1");
+my @filenames = (
+    "traces/DIST-INT-1", 
+    "traces/DIST-SERV-1",
+    "traces/DIST-MM-1", 
+    "traces/DIST-FP-1",
+
+    "traces/DIST-INT-2", 
+    "traces/DIST-SERV-2",
+    "traces/DIST-MM-2", 
+    "traces/DIST-FP-2",
+
+    "traces/DIST-INT-3", 
+    "traces/DIST-SERV-3",
+    "traces/DIST-MM-3", 
+    "traces/DIST-FP-3",
+
+    "traces/DIST-INT-4", 
+    "traces/DIST-SERV-4",
+    "traces/DIST-MM-4", 
+    "traces/DIST-FP-4",
+
+    "traces/DIST-INT-5", 
+    "traces/DIST-SERV-5",
+    "traces/DIST-MM-5", 
+    "traces/DIST-FP-5",
+    );
 my $sum = 0.0;
 foreach (@filenames) {
   my $result;
-  if (`./launcher.pl tester $commandline $_ | grep missed_targets` =~ /(\d+\.\d+)$/) {
+  print "$_ $commandline\n";
+  if (`./launcher.pl tester $commandline $_ oracle | grep missed_targets` =~ /(\d+\.\d+)$/) {
     $result = "$1"
   } else {
     $result = "100.0";

@@ -601,11 +601,11 @@ bool PREDICTOR::get_prediction(
 		taken = status & 1;
 		if(addr_hist.count(br->instruction_addr)){
 			*predicted_target_address = actual_addr;
-			return taken;
+			//			return taken;
 		} else {
 			*predicted_target_address = br->instruction_next_addr;
 			addr_hist.insert(br->instruction_addr);
-			return false;
+			//			return false;
 		}
 	}
 

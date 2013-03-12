@@ -57,7 +57,7 @@ int main()
 		bool thought_taken = p.get_prediction(&br, NULL, &predicted_addr);
 
 
-		if(predicted_addr != actual_addr) {
+		if((taken != thought_taken) || (taken && predicted_addr != actual_addr)) {
 			missed_dest++;
 
 			if(br.is_call)
