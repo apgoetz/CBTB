@@ -420,8 +420,6 @@ void dec_cnt(unsigned char &counter, uint size) {
 //predicts taken/not taken branch based on local history
 bool alpha_local_predict(const branch_record_c *br)
 {
-	debug("alpha_local_predict called\n");
-
 	//grabs bits 0-9 of the PC to index the table
 	unsigned int PC = ((br->instruction_addr) & 0x3FF);
 
@@ -442,8 +440,6 @@ bool alpha_local_predict(const branch_record_c *br)
 //predicts taken/not taken branch based on global history
 bool alpha_global_predict(const branch_record_c *br)
 {
-	debug("alpha_global_predict called\n");
-
 	if(global_predict[path_history] >= 2)
 		return true;
 
@@ -527,7 +523,6 @@ void alpha_update(const branch_record_c *br, bool taken)
 void alpha_setup(void) 
 {
 	int i = 0;
-	debug("Setting up ALPHA predictor...\n");
 
 	//initialize the tables for the local predictor
 	for(i = 0; i < 1024; i++)
@@ -553,7 +548,6 @@ void alpha_setup(void)
 
 void alpha_destroy(void)
 {
-	debug("Destroying ALPHA predictor...\n");
 }
 
 static FILE *oraclefd = NULL;
