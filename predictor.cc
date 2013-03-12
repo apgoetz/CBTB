@@ -475,12 +475,8 @@ void alpha_update(const branch_record_c *br, bool taken)
 {
 
 	unsigned int PC = (br->instruction_addr) & 0x3FF;
-	unsigned int global = global_predict[path_history];
-	bool g_taken = global >= 4;
-	bool g_correct = g_taken == taken;
-	unsigned int local = local_predict[local_hist_table[PC]];
-	bool l_taken = local >= 2;
-	bool l_correct = l_taken = taken;
+	bool g_correct = (alpha_global_predict(br) == taken);
+	bool l_correct = (alpha_local_predict(br) == taken);
 
 	// update choice predictor
 	if (!g_correct && !l_correct) {
@@ -513,7 +509,7 @@ void alpha_update(const branch_record_c *br, bool taken)
 	//Path History:
 	//shift left by one and mask off the last 12 bits
 	//so that any bits above the 12th will be zero
-	path_history = (path_history << 1) & 0x0FFF;
+	path_history = (path_history << 1) & 0xFFF;
 	
 	if(taken)
 		path_history++;
@@ -537,16 +533,16 @@ void alpha_setup(void)
 	for(i = 0; i < 1024; i++)
 	{
 		local_hist_table[i] = 0;
-		local_predict[i] = 4;
+		local_predict[i] = 0b011;
 	}
 
 	//initialize the global prediction table
 	//and the choice prediction table
 	for(i = 0; i < 4096; i++)
 	{
-		global_predict[i] = 1;
+		global_predict[i] = 0b01;
 		//sets the default choice prediction to weakly not taken
-		choice_predict[i] = 2;
+		choice_predict[i] = 0b10;
 	}
 
 	//initializes the path history to all not taken by default
