@@ -121,7 +121,7 @@ sub parse_status
     my @options;
     while (<$fh>) {
       my @fields = split /,/;
-      push @options, join (",", @fields[0..6]);
+      push @options, join (",", @fields[0..7]);
     }
     return \@options;
 }
