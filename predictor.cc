@@ -2,17 +2,26 @@
 #include "predictor.h"
 #include <cassert>
 #include <stdlib.h>
-#include <set>
+#include <map>
 #include <stdint.h>
 #include <stdlib.h>
 #include <vector>
 #include <deque>
 
 
-static int util_debugmode = 0;
+// Global variables used in multiple files:
+
+static int util_debugmode = 0;	// Whether or not BTB_DEBUG is set
+static FILE *oraclefd = NULL;	// The file descriptor of the oracle
+				// file, if it exists
+static std::map<uint,uint> addr_hist; // hash table of branch
+				      // targets. Used in the oracle
+				      // predictor
+
+// macro to print debug statement. If debug mode is turned on...
 #define debug(...) do {if(util_debugmode)fprintf(stderr, __VA_ARGS__);} while(0)
 
-// implements ceil(log2(x))
+// implements ceil(log2(x)). Used to calculated table sizes ONLY
 int log2(int value)
 {
 	value--;
@@ -26,6 +35,8 @@ int log2(int value)
 	return 0;
 }
 
+// Simple factorial function, used to number of LRU bits needed in
+// cache
 int factorial(int n){
 	if(n <= 1)
 		return 1;
@@ -33,6 +44,8 @@ int factorial(int n){
 		return n*factorial(n-1);
 }
 
+// Helper function to get the value of an environment variable, in
+// order to set a parameter of the framework
 void getparam(const char* name, int *value)
 {
 	char* tmpval = NULL;
@@ -41,6 +54,8 @@ void getparam(const char* name, int *value)
 		*value = atoi(tmpval);
 }
 
+// Enum describing two possible cache-replacement strategies
+// implemented. 
 enum WayAlg_t {WAY_RROBIN = 0, WAY_LRU = 1};
 
 
@@ -49,10 +64,11 @@ enum WayAlg_t {WAY_RROBIN = 0, WAY_LRU = 1};
 // implementation in order to reduce code size
 class WayPicker {
 private:
-	int numways;	
-	WayAlg_t algorithm;
-	int *counters;
+	int numways;		// the number of ways in the cache
+	WayAlg_t algorithm;	// which replacement algorithm to use
+	int *counters;		// pointer to counter object
 public:
+	// constructor. must provide the number of ways in the cache
 	WayPicker(int numways = 1) 
 		: numways(numways), algorithm(WAY_RROBIN), 
 		  counters(new int[numways]) {
@@ -90,30 +106,48 @@ public:
 		return *this;
 	}
 	
+	// destructor
 	~WayPicker() {
 		delete [] counters;
 	}
 
+	// replacement function. Called when a way needs to be
+	// evicted. It returns the number of the way that has been
+	// evicted, and updates its current state.
 	int replace() {
 		assert(numways > 0);
+		// If we are using round robin, eviction is
+		// easy. return the current value of the counter, and
+		// increment to the next victim.
 		if(algorithm == WAY_RROBIN) {
 			int choice = counters[0];			
 			counters[0]++;
 			counters[0] %= numways;
 			return choice;
-		} else {
+			
+		} // If we are using LRU, it is a bit more
+		  // complicated. We need to find the way that has the
+		  // highest counter value. (equal to numways-1). We
+		  // return this way, and mark that way as LRU.
+		else {
 			for(int i = 0; i < numways; i++) {
 				if(counters[i] == numways-1) {
 					update(i);
 					return i;
 				}	
 			}
+			// we should never get here.
 			assert(0);
 		}
 	}
 
+	// this function is used to update the LRU way.
 	void update(int way_used) {
 		assert(numways > 0);
+		// uses counter method: all ways with a counter value
+		// smaller than the counter value of the LRU way are
+		// incremented, and the LRU was has its counter set to
+		// zero
 		if(algorithm == WAY_LRU) {
 			int oldval = counters[way_used];
 			for(int i = 0; i < numways; i++)
@@ -122,7 +156,7 @@ public:
 			counters[way_used] = 0;
 		}
 	}
-	
+	// return the size of this waypicker
 	int size() {
 		if (algorithm == WAY_RROBIN)
 			return log2(numways);
@@ -131,27 +165,41 @@ public:
 	}
 };
 
+// Helper class to implement a RAS
 class CallHistoryQueue {
 private:
-	std::deque<uint> callqueue;
-	int capacity;
+	std::deque<uint> callqueue; // used to store RAS
+	int capacity;		    // size of RAS in entries
 	
 public:
-	uint maxsize;
-	uint call_overflow;
-	uint ret_underflow;
+	uint maxsize;		// counter indicating deepest stack seen
+	uint call_overflow;	// incremented every time we try to
+				// add a call to the stack, and it is
+				// full.
+	uint ret_underflow;	// incremented every time we try to
+				// return a return address from the
+				// RAS, and it is empty
+
+	// constructor
 	CallHistoryQueue()
 		: capacity(0), maxsize(0), call_overflow(0), ret_underflow(0) {
+		// get the size of the cache from an environment
+		// variable
 		getparam("BTB_FUNC_CAP", (int*)&capacity);
 	}
 	
+	// if a call happens, the address of the next instruction is
+	// passed to this function. 
 	void call(uint addr) {
+		// if there is no RAS
 		if (capacity == 0) {
 			call_overflow++;
 			return;
 		}
+		// always push the new value on the top of the stack
 		callqueue.push_front(addr);
 		uint size = callqueue.size();
+		// if we are at capacity, we need to remove the oldest entry
 		if(capacity > 0 && (int)size > capacity) {
 			callqueue.pop_back();
 			call_overflow++;
@@ -160,6 +208,8 @@ public:
 			maxsize = size;
 	}
 	
+	// called when we need to fetch the return address. If the
+	// stack is empty, returns false
 	bool ret(uint * addr) {
 		if(callqueue.size() > 0) {
 			*addr = callqueue.front();
@@ -171,7 +221,11 @@ public:
 
 	}
 	
+	// returns the size of the stack in bits
 	int size() {
+		// each entry is 32 bit, and we need 2 pointers, one
+		// to the top of the stack, and a count of the number
+		// of elements in the stack.
 		if (capacity > 0)
 			return 32*capacity + 2*log2(capacity);
 		else if (capacity < 0)
@@ -185,19 +239,28 @@ public:
 // elements in an arbitrary number of ways, 
 class BTB_CACHE {
 private:
-	int indexbits;
-	size_t numways;
-	size_t btbsize;
-	size_t tagsize;
+	int indexbits;		// the number of bits of the cache that are index bits
+	size_t numways;		// the number of ways in the cache
+	size_t btbsize;		// The size of the btb (numways * 2^indexbits)
+	size_t tagsize;		// number of bits that represent the tag
 
-	int m_displacementbits;
-	uint* btb_buffer;
-	uint* btb_tags;
-	std::vector<WayPicker> btb_lru;
+	int m_displacementbits;	// the number of displacement bits
+				// stored in the cache. If (dest - PC
+				// > 2^displacementbits), the target
+				// cannot fit in this cache
+	uint* btb_buffer;	// pointer to target address buffer
+	uint* btb_tags;		// pointer to tag bit buffer
+	std::vector<WayPicker> btb_lru; // vector of state bits for
+					// way eviction policy
 
 
 public:
-	uint nummissed;
+	uint nummissed;		// The number of branch targets that
+				// were too large to fit in this
+				// cache: kept for statistical
+				// purposes
+
+	// returns the number of displacement bits this cache can store
 	int displacementbits() {
 		if (m_displacementbits < 0 || m_displacementbits >= 32)
 			return 32;
@@ -205,9 +268,11 @@ public:
 			return m_displacementbits;
 	}
 
+	// simple constructor used to represent an cache with zero entries
 	BTB_CACHE() 
 		: indexbits(-1) {
 	}
+	// constructor
 	BTB_CACHE(int indexbits, int numways = 1, int displacementbits = -1) 
 		: indexbits(indexbits), numways(numways), 
 		  btbsize(1 << indexbits), 
@@ -222,6 +287,7 @@ public:
 			btb_tags[i] = 0xffffffff;
 		}
 	}
+	// deconstructor
 	~BTB_CACHE() {
 		if (indexbits < 0)
 			return;
@@ -565,12 +631,12 @@ void alpha_setup(void)
 	
 }
 
+// This function is called once when the program exits. It is used to
+// tear down any data structures used by the alpha predictor. 
 void alpha_destroy(void)
 {
 }
 
-static FILE *oraclefd = NULL;
-static std::set<uint> addr_hist;
 bool PREDICTOR::get_prediction(
 	const branch_record_c* br, 
 	const op_state_c* os, 
@@ -599,20 +665,18 @@ bool PREDICTOR::get_prediction(
 			&status);
 		assert(instr_addr == br->instruction_addr);
 		taken = status & 1;
-		if(addr_hist.count(br->instruction_addr)){
-			*predicted_target_address = actual_addr;
+		// if it is not in the table yet
+		if(addr_hist.count(br->instruction_addr)) {
+			*predicted_target_address = addr_hist[instr_addr];
+			addr_hist[instr_addr] = actual_addr;
 			//			return taken;
 		} else {
 			*predicted_target_address = br->instruction_next_addr;
-			addr_hist.insert(br->instruction_addr);
+			addr_hist[instr_addr] = actual_addr;
 			//			return false;
 		}
 	}
 
-	// the predictor is only checked if the branch was taken, or
-	// it was unconditional. Therefore, we only need to call the
-	// target predictor if we think this was a taken branch, or if
-	// the branch is unconditional
 	*predicted_target_address = btb_predict(br);
 
 	return taken;
@@ -626,11 +690,17 @@ void PREDICTOR::update_predictor(
 	const op_state_c* os, bool taken, uint actual_target_address)
 {
 
+	// Update the BTB predictor
 	btb_update(br, actual_target_address);
 
+	// Update the Alpha predictor
 	if (br->is_conditional)
 		alpha_update(br, taken);
 }
+
+// This function is called at the end of the framework. It is used to
+// print out cumulative statistics information in more detail than is
+// captured by the benchmark.
 static void on_exit(void)
 {
 	// if we are using an oracle, close the pipe.
@@ -642,6 +712,8 @@ static void on_exit(void)
 	alpha_destroy();
 }
 
+// This function is only called once. It is used to set up some global
+// variables for the branch target predictor.
 static void init(void)
 {
 	// determine if we should print debug messages...
