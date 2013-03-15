@@ -245,7 +245,7 @@ public:
 		}
 		return false;
 	}
-	bool update(uint addr, uint target) {
+	bool update(uint addr, uint target, uint &evicted_a, uint &evicted_t) {
 
 		if(indexbits < 0)
 			return false;
@@ -272,13 +272,26 @@ public:
 		}	
 
 		// insert into table
+		// save evicted value
 		uint way = btb_lru[index].replace();
+		// if the way was evicted
+		if(btb_buffer[shiftedindex + way] != 0xffffffff) {
+			evicted_a = index;
+			evicted_a &= (1 << indexbits) - 1;
+			evicted_a |= btb_tags[shiftedindex + way] << indexbits;
+			evicted_t = btb_buffer[shiftedindex + way];
+		}
+
 		btb_tags[shiftedindex + way] = tag;
 		btb_buffer[shiftedindex+ way] = target;
 
 		return true;
 	}
-
+	bool update(uint addr, uint target) {
+		uint evicted_a;
+		uint evicted_t;
+		return update(addr, target, evicted_a, evicted_t);
+	}	
 	uint size(void) {
 
 		if(indexbits < 0)
@@ -323,14 +336,20 @@ uint btb_predict(const branch_record_c *br)
 void btb_update(const branch_record_c *br, uint actual_addr)
 {
 
+	uint evicted_addr = 0;
+	uint evicted_target = 0;
 	if(br->is_call)
 		callqueue.call(br->instruction_next_addr);
 
 	// if we cannot place the address in the displacement cache,
 	// place it in the main cache (hierarchical caches!)
-	if(!dispcache->update(br->instruction_addr, actual_addr)) {
+	if(!dispcache->update(br->instruction_addr, actual_addr, evicted_addr, evicted_target)) {
 		maincache->update(br->instruction_addr, actual_addr);
 	}
+	if(evicted_addr != 0){
+		maincache->update(evicted_addr,evicted_target);
+	}
+		
 }
 
 // setup and destroy functions for the btb predictor
