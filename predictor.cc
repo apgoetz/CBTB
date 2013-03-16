@@ -69,10 +69,9 @@ private:
 	int *counters;		// pointer to counter object
 public:
 	// constructor. must provide the number of ways in the cache
-	WayPicker(int numways = 1) 
-		: numways(numways), algorithm(WAY_LRU), 
+	WayPicker(int numways = 1, WayAlg_t algo = WAY_LRU) 
+		: numways(numways), algorithm(algo), 
 		  counters(new int[numways]) {
-		getparam("BTB_WAY_ALGO", (int*)&algorithm);
 		assert(numways > 0);
 		if (algorithm > WAY_LRU)
 			algorithm = WAY_LRU;
@@ -273,12 +272,12 @@ public:
 		: indexbits(-1) {
 	}
 	// constructor
-	BTB_CACHE(int indexbits, int numways = 1, int displacementbits = -1) 
+	BTB_CACHE(int indexbits, int numways = 1, int displacementbits = -1, WayAlg_t way_algo = WAY_LRU) 
 		: indexbits(indexbits), numways(numways), 
 		  btbsize(1 << indexbits), 
 		  tagsize(32-indexbits),
 		  m_displacementbits(displacementbits), 
-		  btb_lru(btbsize, WayPicker(numways)),
+		  btb_lru(btbsize, WayPicker(numways, way_algo)),
 		  nummissed(0){		
 		btb_buffer = (uint*)malloc(btbsize*numways*sizeof(uint));
 		btb_tags = (uint*)malloc(btbsize*numways*sizeof(uint));
@@ -366,8 +365,7 @@ public:
 		size += btbsize * numways * tagsize;
 		size += btbsize * numways* displacementbits();
 		if(numways > 1) {
-			WayPicker tmppicker(numways);
-			size += btbsize*tmppicker.size();
+			size += btbsize*btb_lru[0].size();
 		}
 		if(numways > 8)
 			size *=2;
@@ -433,9 +431,9 @@ void btb_setup(void)
 	getparam("BTB_DISP_SIZE", &disp_size);
 	getparam("BTB_DISP_WAYS", &disp_ways);
 	getparam("BTB_WAY_ALGO", (int*)&way_algo);
-	maincache = new BTB_CACHE(main_size, main_ways);
+	maincache = new BTB_CACHE(main_size, main_ways, -1, way_algo);
 	if (disp_size >= 0)
-		dispcache = new BTB_CACHE(disp_size, disp_ways, disp_entries);
+		dispcache = new BTB_CACHE(disp_size, disp_ways, disp_entries, way_algo);
 	else 
 		dispcache = new BTB_CACHE();
 	debug("Way Algo: ");
