@@ -70,7 +70,7 @@ private:
 public:
 	// constructor. must provide the number of ways in the cache
 	WayPicker(int numways = 1) 
-		: numways(numways), algorithm(WAY_RROBIN), 
+		: numways(numways), algorithm(WAY_LRU), 
 		  counters(new int[numways]) {
 		getparam("BTB_WAY_ALGO", (int*)&algorithm);
 		assert(numways > 0);
@@ -182,7 +182,7 @@ public:
 
 	// constructor
 	CallHistoryQueue()
-		: capacity(0), maxsize(0), call_overflow(0), ret_underflow(0) {
+		: capacity(21), maxsize(0), call_overflow(0), ret_underflow(0) {
 		// get the size of the cache from an environment
 		// variable
 		getparam("BTB_FUNC_CAP", (int*)&capacity);
@@ -421,12 +421,12 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 // setup and destroy functions for the btb predictor
 void btb_setup(void)
 {
-	int main_size = 0;
-	int main_ways = 1;
-	int disp_entries = 16;
-	int disp_size = 0;
-	int disp_ways = 1;
-	WayAlg_t way_algo = WAY_RROBIN;
+	int main_size = 6;
+	int main_ways = 8;
+	int disp_entries = 8;
+	int disp_size = 6;
+	int disp_ways = 2;
+	WayAlg_t way_algo = WAY_LRU;
 	getparam("BTB_MAIN_SIZE", &main_size);
 	getparam("BTB_MAIN_WAYS", &main_ways);
 	getparam("BTB_DISP_ENTRIES", &disp_entries);
