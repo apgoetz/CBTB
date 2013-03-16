@@ -62,14 +62,14 @@ enum WayAlg_t {WAY_RROBIN = 0, WAY_LRU = 1};
 // picks which way to replace, based on either lru or round robin. The
 // LRU implementation uses counters, but sizes itself with the FSM
 // implementation in order to reduce code size
-class WayPicker {
+class ReplacementPolicy {
 private:
 	int numways;		// the number of ways in the cache
 	WayAlg_t algorithm;	// which replacement algorithm to use
 	int *counters;		// pointer to counter object
 public:
 	// constructor. must provide the number of ways in the cache
-	WayPicker(int numways = 1, WayAlg_t algo = WAY_LRU) 
+	ReplacementPolicy(int numways = 1, WayAlg_t algo = WAY_LRU) 
 		: numways(numways), algorithm(algo), 
 		  counters(new int[numways]) {
 		assert(numways > 0);
@@ -81,7 +81,7 @@ public:
 			counters[i] = i;
 	}
 	// copy constructor
-	WayPicker(const WayPicker& other) 
+	ReplacementPolicy(const ReplacementPolicy& other) 
 		: numways(other.numways), algorithm(other.algorithm), 
 		  counters(new int[other.numways]){
 		assert(numways > 0);
@@ -91,7 +91,7 @@ public:
 	}
 
 	// copy assignment
-	WayPicker & operator= (const WayPicker & other) {
+	ReplacementPolicy & operator= (const ReplacementPolicy & other) {
 		if(this != &other)
 		{
 			numways = other.numways;
@@ -106,7 +106,7 @@ public:
 	}
 	
 	// destructor
-	~WayPicker() {
+	~ReplacementPolicy() {
 		delete [] counters;
 	}
 
@@ -165,7 +165,7 @@ public:
 };
 
 // Helper class to implement a RAS
-class CallHistoryQueue {
+class ReturnAddressStack {
 private:
 	std::deque<uint> callqueue; // used to store RAS
 	int capacity;		    // size of RAS in entries
@@ -180,7 +180,7 @@ public:
 				// RAS, and it is empty
 
 	// constructor
-	CallHistoryQueue()
+	ReturnAddressStack()
 		: capacity(21), maxsize(0), call_overflow(0), ret_underflow(0) {
 		// get the size of the cache from an environment
 		// variable
@@ -247,9 +247,9 @@ private:
 				// stored in the cache. If (dest - PC
 				// > 2^displacementbits), the target
 				// cannot fit in this cache
-	uint* btb_buffer;	// pointer to target address buffer
-	uint* btb_tags;		// pointer to tag bit buffer
-	std::vector<WayPicker> btb_lru; // vector of state bits for
+	uint* targets;	// pointer to target address buffer
+	uint* tags;		// pointer to tag bit buffer
+	std::vector<ReplacementPolicy> policy_state; // vector of state bits for
 					// way eviction policy
 
 
@@ -277,21 +277,21 @@ public:
 		  btbsize(1 << indexbits), 
 		  tagsize(32-indexbits),
 		  m_displacementbits(displacementbits), 
-		  btb_lru(btbsize, WayPicker(numways, way_algo)),
+		  policy_state(btbsize, ReplacementPolicy(numways, way_algo)),
 		  nummissed(0){		
-		btb_buffer = (uint*)malloc(btbsize*numways*sizeof(uint));
-		btb_tags = (uint*)malloc(btbsize*numways*sizeof(uint));
+		targets = (uint*)malloc(btbsize*numways*sizeof(uint));
+		tags = (uint*)malloc(btbsize*numways*sizeof(uint));
 
 		for(uint i = 0; i < btbsize*numways; i++) {
-			btb_tags[i] = 0xffffffff;
+			tags[i] = 0xffffffff;
 		}
 	}
 	// deconstructor
 	~BTB_CACHE() {
 		if (indexbits < 0)
 			return;
-		free(btb_buffer);
-		free(btb_tags);
+		free(targets);
+		free(tags);
 	}
 	bool predict(uint instr, uint &target) {
 
@@ -303,14 +303,14 @@ public:
 		uint tag = instr >> indexbits;
 		
 		for(uint i = 0; i < numways; i++) {
-			if(btb_tags[shiftedindex+i] == tag) {
-				target =  btb_buffer[shiftedindex+i];
+			if(tags[shiftedindex+i] == tag) {
+				target =  targets[shiftedindex+i];
 				return true;
 			}
 		}
 		return false;
 	}
-	bool update(uint addr, uint target, uint &evicted_a, uint &evicted_t) {
+	bool update(uint addr, uint target, uint &evicted_addr, uint &evicted_target) {
 
 		if(indexbits < 0)
 			return false;
@@ -319,6 +319,8 @@ public:
 		uint shiftedindex = index * numways;
 		uint tag = addr >> indexbits;
 		
+		// need to check that the displacement can fit in the
+		// displacement field
 		if (displacementbits() != 32) {
 			uint delta = target - addr;
 			int64_t maxdisp = ((int64_t)1 << (m_displacementbits - 1)) - 1;
@@ -330,25 +332,25 @@ public:
 		}
 		
 		for (uint i = 0; i < numways; i++) {
-			if (btb_tags[shiftedindex+i] == tag){
-				btb_lru[index].update(i);
+			if (tags[shiftedindex+i] == tag){
+				policy_state[index].update(i);
 				return true;
 			}
 		}	
 
 		// insert into table
 		// save evicted value
-		uint way = btb_lru[index].replace();
+		uint way = policy_state[index].replace();
 		// if the way was evicted
-		if(btb_buffer[shiftedindex + way] != 0xffffffff) {
-			evicted_a = index;
-			evicted_a &= (1 << indexbits) - 1;
-			evicted_a |= btb_tags[shiftedindex + way] << indexbits;
-			evicted_t = btb_buffer[shiftedindex + way];
+		if(targets[shiftedindex + way] != 0xffffffff) {
+			evicted_addr = index;
+			evicted_addr &= (1 << indexbits) - 1;
+			evicted_addr |= tags[shiftedindex + way] << indexbits;
+			evicted_target = targets[shiftedindex + way];
 		}
 
-		btb_tags[shiftedindex + way] = tag;
-		btb_buffer[shiftedindex+ way] = target;
+		tags[shiftedindex + way] = tag;
+		targets[shiftedindex+ way] = target;
 
 		return true;
 	}
@@ -365,7 +367,7 @@ public:
 		size += btbsize * numways * tagsize;
 		size += btbsize * numways* displacementbits();
 		if(numways > 1) {
-			size += btbsize*btb_lru[0].size();
+			size += btbsize*policy_state[0].size();
 		}
 		if(numways > 8)
 			size *=2;
@@ -376,7 +378,7 @@ public:
 
 BTB_CACHE *maincache;
 BTB_CACHE *dispcache;
-static CallHistoryQueue callqueue;
+static ReturnAddressStack rastack;
 uint btb_predict(const branch_record_c *br)
 {
 	uint target;
@@ -389,7 +391,7 @@ uint btb_predict(const branch_record_c *br)
 			target = br->instruction_next_addr;
 
 	if(br->is_return) {
-		if(callqueue.ret(&target))
+		if(rastack.ret(&target))
 			return target;
 	}
 
@@ -403,7 +405,7 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 	uint evicted_addr = 0;
 	uint evicted_target = 0;
 	if(br->is_call)
-		callqueue.call(br->instruction_next_addr);
+		rastack.call(br->instruction_next_addr);
 
 	// if we cannot place the address in the displacement cache,
 	// place it in the main cache (hierarchical caches!)
@@ -449,7 +451,7 @@ void btb_setup(void)
 		1 << disp_size, disp_ways, dispcache->displacementbits());
 	else
 		debug("No displacement cache.\n");
-	debug("BTB size: %d\n",dispcache->size() + maincache->size() + callqueue.size());
+	debug("BTB size: %d\n",dispcache->size() + maincache->size() + rastack.size());
 
 
 }
@@ -459,9 +461,9 @@ void btb_destroy(void)
 	delete maincache;
 	delete dispcache;
 	debug("Unable to cache %d branch targets.\n", dispcache->nummissed);
-	debug("max func stack size: %d\n", callqueue.maxsize);
-	debug("call overflow: %d\n", callqueue.call_overflow);
-	debug("ret underflow: %d\n", callqueue.ret_underflow);
+	debug("max func stack size: %d\n", rastack.maxsize);
+	debug("call overflow: %d\n", rastack.call_overflow);
+	debug("ret underflow: %d\n", rastack.ret_underflow);
 }
 
 // These functions are called once at the begining, and once at the
@@ -652,9 +654,9 @@ bool PREDICTOR::get_prediction(
 		if (br->is_conditional)
 			taken = alpha_predict(br);
 	} else {
-		uint instr_addr = 0xdeadbeef;
-		uint next_addr = 0xdeadbeef;
-		uint actual_addr = 0xdeadbeef;
+		uint instr_addr = 0xbeefa55;
+		uint next_addr = 0xbeefa55;
+		uint actual_addr = 0xbeefa55;
 		uint status = 0x3f;
 		fscanf(oraclefd, "%08x%08x%08x%02x\n", 
 			&instr_addr,
