@@ -12,4 +12,4 @@ $(DOC).pdf: $(DOC).tex $(FIGURES)
 	pdflatex -file-line-error -interaction=nonstopmode $(DOC) 
 
 clean:
-	rm $(DOC).aux $(DOC).log $(DOC).out $(DOC).pdf
+	rm $(DOC).aux $(DOC).log $(DOC).out $(DOC).pdf $(FIGURES)
