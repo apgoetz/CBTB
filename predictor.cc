@@ -238,12 +238,13 @@ public:
 // elements in an arbitrary number of ways, 
 class BTB_CACHE {
 private:
-	int indexbits;		// the number of bits of the cache that are index bits
-	size_t numways;		// the number of ways in the cache
-	size_t btbsize;		// The size of the btb (numways * 2^indexbits)
-	size_t tagsize;		// number of bits that represent the tag
+	int indexbits;		// the number of bits of the cache
+				// that are index bits
+	size_t numways;	// the number of ways in the cache
+	size_t btbsize;	// The size of the btb (numways * 2^indexbits)
+	size_t tagsize;	// number of bits that represent the tag
 
-	int m_displacementbits;	// the number of displacement bits
+	int m_displacementbits;// the number of displacement bits
 				// stored in the cache. If (dest - PC
 				// > 2^displacementbits), the target
 				// cannot fit in this cache
@@ -272,7 +273,8 @@ public:
 		: indexbits(-1) {
 	}
 	// constructor
-	BTB_CACHE(int indexbits, int numways = 1, int displacementbits = -1, WayAlg_t way_algo = WAY_LRU) 
+	BTB_CACHE(int indexbits, int numways = 1, 
+		  int displacementbits = -1, WayAlg_t way_algo = WAY_LRU)
 		: indexbits(indexbits), numways(numways), 
 		  btbsize(1 << indexbits), 
 		  tagsize(32-indexbits),
@@ -310,7 +312,8 @@ public:
 		}
 		return false;
 	}
-	bool update(uint addr, uint target, uint &evicted_addr, uint &evicted_target) {
+	bool update(uint addr, uint target,
+		    uint &evicted_addr, uint &evicted_target) {
 
 		if(indexbits < 0)
 			return false;
@@ -323,7 +326,8 @@ public:
 		// displacement field
 		if (displacementbits() != 32) {
 			uint delta = target - addr;
-			int64_t maxdisp = ((int64_t)1 << (m_displacementbits - 1)) - 1;
+			int64_t maxdisp = 
+				((int64_t)1 << (m_displacementbits - 1)) - 1;
 			int64_t mindisp = -maxdisp - 1;
 			if (delta > maxdisp || delta < mindisp) {
 				nummissed++;
@@ -414,10 +418,12 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 
 	// if we cannot place the address in the displacement cache,
 	// place it in the main cache (hierarchical caches!)
-	if(!dispcache->update(br->instruction_addr, actual_addr, evicted_addr, evicted_target)) {
+	if(!dispcache->update(br->instruction_addr, actual_addr,
+			      evicted_addr, evicted_target)) {
 		maincache->update(br->instruction_addr, actual_addr);
 	}
-	// if an address was evicted from the displacement cache, put it in the main cache
+	// if an address was evicted from the displacement cache,
+	put it in the main cache
 	if(evicted_addr != 0){
 		maincache->update(evicted_addr,evicted_target);
 	}
@@ -450,7 +456,8 @@ void btb_setup(void)
 	maincache = new BTB_CACHE(main_size, main_ways, -1, way_algo);
 
 	if (disp_size >= 0)
-		dispcache = new BTB_CACHE(disp_size, disp_ways, disp_entries, way_algo);
+		dispcache = new BTB_CACHE(disp_size, disp_ways,
+					  disp_entries, way_algo);
 	else 
 		dispcache = new BTB_CACHE();
 
@@ -474,7 +481,8 @@ void btb_setup(void)
 		debug("No displacement cache.\n");
 
 	//prints size of the caches
-	debug("BTB size: %d\n",dispcache->size() + maincache->size() + rastack.size());
+	debug("BTB size: %d\n",dispcache->size() +
+	      maincache->size() + rastack.size());
 
 }
 
@@ -500,12 +508,13 @@ unsigned short local_hist_table[1024];
 //Only uses least significant 3 bits
 unsigned char local_predict[1024];
 
-//Global prediction bits for the sturated counter for the global branch predictor
-//Only uses least significant 2 bits
+//Global prediction bits for the sturated counter for the global
+//branch predictor Only uses least significant 2 bits
 unsigned char global_predict[4096];
 
 //Choice prediction bits for the saturated counter that chooses the
-//predictor that will be used to do the predicting. Only uses least significant 2 bits
+//predictor that will be used to do the predicting. Only uses least
+//significant 2 bits
 unsigned char choice_predict[4096];
 
 //Path history stores the history of the last 12 branches.

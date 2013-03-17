@@ -5,6 +5,7 @@
 \usepackage{fancyhdr} 
 \usepackage{fancybox}
 \usepackage{float}
+\usepackage{listings}
 \usepackage[colorlinks=true,linkcolor=black]{hyperref}
 %\usepackage[labelformat=empty]{caption}
 \usepackage[margin=1.0in]{geometry}
@@ -18,7 +19,7 @@
 \newcommand{\centerimage}[3]{
 \begin{figure}[ht!]  
 \begin{center}
-#1
+\includegraphics[width=\columnwidth]{#1}
 \caption{#2}
 \label{#3}
 \end{center}
@@ -49,14 +50,16 @@ The one described in R. E. Kessler's paper on the Alpha
 %ADD STUFFS ABOUT ALPHA PREDICTOR CHOICES NOT IN PAPER!!!
 
 \section{Branch Target Predictor}
-\centerimage{\includegraphics[width=.5\textwidth]{random.pdf}}{Bitchin' Graph}{bgraph}
+\centerimage{random.pdf}{Bitchin' Graph}{bgraph}
 \section{Testing Methodology}
 %Oracle predictor and BTB variables
 %Table comparing Faust results to our results for Alpha
 \section{Results}
 %Table with all prediction rates for all tests
 \section{Conclusion}
-\section{Appendix}
-
+\newpage
+\onecolumn
+\section{Predictor.cc}
+\lstinputlisting{../predictor.cc}[language=C++, showstringspaces=false]
 \end{document}
 
