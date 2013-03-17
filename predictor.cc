@@ -278,7 +278,7 @@ public:
 		  tagsize(32-indexbits),
 		  m_displacementbits(displacementbits), 
 		  policy_state(btbsize, ReplacementPolicy(numways, way_algo)),
-		  nummissed(0){		
+		  nummissed(0){	
 		targets = (uint*)malloc(btbsize*numways*sizeof(uint));
 		tags = (uint*)malloc(btbsize*numways*sizeof(uint));
 
@@ -341,6 +341,7 @@ public:
 		// insert into table
 		// save evicted value
 		uint way = policy_state[index].replace();
+
 		// if the way was evicted
 		if(targets[shiftedindex + way] != 0xffffffff) {
 			evicted_addr = index;
@@ -349,16 +350,21 @@ public:
 			evicted_target = targets[shiftedindex + way];
 		}
 
+		// insert new brach target into this cache instance
 		tags[shiftedindex + way] = tag;
 		targets[shiftedindex+ way] = target;
 
 		return true;
 	}
+
+	// update function if eviction is irrelevant
 	bool update(uint addr, uint target) {
 		uint evicted_a;
 		uint evicted_t;
 		return update(addr, target, evicted_a, evicted_t);
 	}	
+
+	// returns size of the cache
 	uint size(void) {
 
 		if(indexbits < 0)
@@ -395,7 +401,6 @@ uint btb_predict(const branch_record_c *br)
 			return target;
 	}
 
-
 	return target;
 }
 
@@ -412,6 +417,7 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 	if(!dispcache->update(br->instruction_addr, actual_addr, evicted_addr, evicted_target)) {
 		maincache->update(br->instruction_addr, actual_addr);
 	}
+	// if an address was evicted from the displacement cache, put it in the main cache
 	if(evicted_addr != 0){
 		maincache->update(evicted_addr,evicted_target);
 	}
@@ -421,11 +427,17 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 // setup and destroy functions for the btb predictor
 void btb_setup(void)
 {
+	//number of bits devoted to index
 	int main_size = 6;
+	//number of ways in the main cache
 	int main_ways = 8;
+	//how many bits of displacement are stored in the displacement cache
 	int disp_entries = 8;
+	//number of bits devoted to the index of the displacement cache
 	int disp_size = 6;
+	//number of ways in the displacement cache
 	int disp_ways = 2;
+
 	WayAlg_t way_algo = WAY_LRU;
 	getparam("BTB_MAIN_SIZE", &main_size);
 	getparam("BTB_MAIN_WAYS", &main_ways);
@@ -433,45 +445,57 @@ void btb_setup(void)
 	getparam("BTB_DISP_SIZE", &disp_size);
 	getparam("BTB_DISP_WAYS", &disp_ways);
 	getparam("BTB_WAY_ALGO", (int*)&way_algo);
+
+	//initialize the main cache
 	maincache = new BTB_CACHE(main_size, main_ways, -1, way_algo);
+
 	if (disp_size >= 0)
 		dispcache = new BTB_CACHE(disp_size, disp_ways, disp_entries, way_algo);
 	else 
 		dispcache = new BTB_CACHE();
+
 	debug("Way Algo: ");
+
+	//print information about eviction policy of both caches
 	if(way_algo == WAY_RROBIN)
 		debug("Round Robin\n");
 	else
 		debug("LRU\n");
 	
+	//prints main cache geometry information
 	debug("Main: %d entries by %d ways, %d bit displacements\n", 
 		1 << main_size, main_ways, maincache->displacementbits());
+
+	//print displacement cache geometry information
 	if(disp_size >= 0)
 	debug("Displacement: %d entries by %d ways, %d bit displacements\n", 
 		1 << disp_size, disp_ways, dispcache->displacementbits());
 	else
 		debug("No displacement cache.\n");
-	debug("BTB size: %d\n",dispcache->size() + maincache->size() + rastack.size());
 
+	//prints size of the caches
+	debug("BTB size: %d\n",dispcache->size() + maincache->size() + rastack.size());
 
 }
 
 void btb_destroy(void)
 {
-	delete maincache;
-	delete dispcache;
 	debug("Unable to cache %d branch targets.\n", dispcache->nummissed);
 	debug("max func stack size: %d\n", rastack.maxsize);
 	debug("call overflow: %d\n", rastack.call_overflow);
 	debug("ret underflow: %d\n", rastack.ret_underflow);
+	delete maincache;
+	delete dispcache;
 }
 
 // These functions are called once at the begining, and once at the
 // end of the trace
 static void on_exit(void);
 static void init(void);
+
 //Local history table, only the least significant 10 bits will be used
 unsigned short local_hist_table[1024];
+
 //Local prediction bits for the saturated counter for the local branch predictor
 //Only uses least significant 3 bits
 unsigned char local_predict[1024];
@@ -495,8 +519,6 @@ void inc_cnt(unsigned char &counter, uint size) {
 		counter++;
 }
 
-
-
 // helper function to decrement a saturated counter
 void dec_cnt(unsigned char &counter, uint size) {
 	if (counter > 0)
@@ -510,7 +532,6 @@ bool alpha_local_predict(const branch_record_c *br)
 
 	//grabs the history in the table
 	unsigned int history = local_hist_table[PC];
-	//printf("PC = %u\nhistory = %u\n", PC, history);
 
 	//predict true if the counter is more than 4
 	//i.e. (weakly|strongly) taken
@@ -570,7 +591,6 @@ void alpha_update(const branch_record_c *br, bool taken)
 		// do nothing
 	}
 		
-
 	//Global Predictor:
 	//updates the global predictor saturated counter
 	if(taken)
@@ -594,7 +614,6 @@ void alpha_update(const branch_record_c *br, bool taken)
 	
 	if(taken)
 		path_history++;
-
 
 	//update the local history table with the newest history
 	unsigned short &local_hist = local_hist_table[PC];
@@ -627,7 +646,6 @@ void alpha_setup(void)
 
 	//initializes the path history to all not taken by default
 	path_history = 0;
-
 	
 }
 
@@ -664,7 +682,7 @@ bool PREDICTOR::get_prediction(
 			&actual_addr,
 			&status);
 		assert(instr_addr == br->instruction_addr);
-		taken = status & 1;
+		taken = status & 0x1;
 		// if it is not in the table yet
 		if(addr_hist.count(br->instruction_addr)) {
 			*predicted_target_address = addr_hist[instr_addr];
