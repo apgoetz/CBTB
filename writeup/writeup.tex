@@ -6,7 +6,7 @@
 \usepackage{fancybox}
 \usepackage{float}
 \usepackage[colorlinks=true,linkcolor=black]{hyperref}
-\usepackage[labelformat=empty]{caption}
+%\usepackage[labelformat=empty]{caption}
 \usepackage[margin=1.0in]{geometry}
 
 \pagestyle{fancy}
@@ -24,13 +24,12 @@
 \end{center}
 \end{figure}}
 
-
 \newcommand{\tstamp}{\today}   
 %\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
 \renewcommand{\sectionmark}[1]{\markright{#1}}
 \lhead[\fancyplain{}{\thepage}]         {\fancyplain{}{Andy Goetz \& Kevin Riedl}}
 \chead[\fancyplain{}{}]                 {\fancyplain{}{}}
-\rhead[\fancyplain{}{\rightmark}]       {\fancyplain{}{ECE 486 Branch Target Buffer \& Alpha Predictor}}
+\rhead[\fancyplain{}{\rightmark}]       {\fancyplain{}{ECE 486 Branch Target Buffer Predictor \& Alpha Predictor}}
 \lfoot[\fancyplain{}{}]                 {\fancyplain{\tstamp}{\tstamp}}
 \cfoot[\fancyplain{\thepage}{}]         {\fancyplain{}{}}
 \rfoot[\fancyplain{\tstamp} {\tstamp}]  {\fancyplain{}{\thepage}}
@@ -41,13 +40,23 @@
 
 \begin{document}
 \maketitle
+\section{Introduction}
+\subsection{Overview}
 \section{Alpha Predictor}
 The branch predictor used in this projectwas modeled after
 The one described in R. E. Kessler's paper on the Alpha 
 21264 processor.
+%ADD STUFFS ABOUT ALPHA PREDICTOR CHOICES NOT IN PAPER!!!
 
-\section{Brach Target Buffer}
-
+\section{Branch Target Predictor}
 \centerimage{\includegraphics[width=.5\textwidth]{random.pdf}}{Bitchin' Graph}{bgraph}
+\section{Testing Methodology}
+%Oracle predictor and BTB variables
+%Table comparing Faust results to our results for Alpha
+\section{Results}
+%Table with all prediction rates for all tests
+\section{Conclusion}
+\section{Appendix}
+
 \end{document}
 
