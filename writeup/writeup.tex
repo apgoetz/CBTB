@@ -1,0 +1,39 @@
+\documentclass[titlepage]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage{fancyhdr} 
+\usepackage[labelformat=empty]{caption}
+\usepackage[margin=1.0in]{geometry}
+
+\pagestyle{fancy}
+
+%redefines subsections with letters instesad of numbers
+\renewcommand{\thesubsection}{\thesection.\alph{subsection}}
+
+\newcommand{\tstamp}{\today}   
+%\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\sectionmark}[1]{\markright{#1}}
+\lhead[\fancyplain{}{\thepage}]         {\fancyplain{}{Andy Goetz \& Kevin Riedl}}
+\chead[\fancyplain{}{}]                 {\fancyplain{}{}}
+\rhead[\fancyplain{}{\rightmark}]       {\fancyplain{}{ECE 486 Branch Target Buffer \& Alpha Predictor}}
+\lfoot[\fancyplain{}{}]                 {\fancyplain{\tstamp}{\tstamp}}
+\cfoot[\fancyplain{\thepage}{}]         {\fancyplain{}{}}
+\rfoot[\fancyplain{\tstamp} {\tstamp}]  {\fancyplain{}{\thepage}}
+
+\author{\LARGE Andy Goetz \& Kevin Riedl}
+\date{\today}
+\title{\Huge \textbf{ECE 486 Branch Target Buffer \& Alpha Predictor}}
+
+\begin{document}
+\maketitle
+\section{Alpha Predictor}
+The branch predictor used in this projectwas modeled after
+The one described in R. E. Kessler's paper on the Alpha 
+21264 processor.
+
+\section{Brach Target Buffer}
+
+
+\end{document}
+
