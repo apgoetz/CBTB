@@ -1,8 +1,11 @@
-\documentclass[titlepage]{article}
+\documentclass[twocolumn]{article}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{siunitx}
 \usepackage{fancyhdr} 
+\usepackage{fancybox}
+\usepackage{float}
+\usepackage[colorlinks=true,linkcolor=black]{hyperref}
 \usepackage[labelformat=empty]{caption}
 \usepackage[margin=1.0in]{geometry}
 
@@ -10,6 +13,17 @@
 
 %redefines subsections with letters instesad of numbers
 \renewcommand{\thesubsection}{\thesection.\alph{subsection}}
+
+% Center Image Command
+\newcommand{\centerimage}[3]{
+\begin{figure}[ht!]  
+\begin{center}
+#1
+\caption{#2}
+\label{#3}
+\end{center}
+\end{figure}}
+
 
 \newcommand{\tstamp}{\today}   
 %\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
@@ -34,6 +48,6 @@ The one described in R. E. Kessler's paper on the Alpha
 
 \section{Brach Target Buffer}
 
-
+\centerimage{\includegraphics[width=.5\textwidth]{random.pdf}}{Bitchin' Graph}{bgraph}
 \end{document}
 
