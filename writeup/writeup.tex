@@ -173,7 +173,7 @@ caches.
 
 \section{Testing Methodology}
 
-In order to determine the optimal branch predictor design, a generic
+In order to determine the optimal branch predictor, a generic
 predictor framework was designed that used environment variables to
 determine the cache hierarchy used by the branch target predictor.
 The tunable parameters can be seen in table \ref{envars}. 
@@ -196,13 +196,31 @@ Variable Name & Description \\
 
 In addition, a replacement predictor framework was written using
 plaintext tracefiles, allowing for much faster traces, as well as more
-detailed predictor statistics. These statistics included a breakdown of
-the percentage of misses that were caused by function calls,
-conditional branches, and indirect branches, among other values. 
-
+detailed predictor statistics. These statistics included a breakdown
+of the percentage of misses that were caused by function calls,
+conditional branches, and indirect branches, among other values. Also,
+an oracle predictor was developed. This oracle was capable of perfect
+prediction of a given branch's taken/not-taken status, which allowed
+us to evaluate branch target buffer performance without being impacted
+by design decisions in the alpha predictor. 
 
 \centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Performance
   of Random Sized BTB Caches}{bgraph}
+
+The decision was made to test the solution space exhaustively. The
+tuneable parameters on our cache meant that there were over 400,000
+unique cache hierarchies possible. This was far too many to test in
+the time alotted. However, we were able to use heuristics to reduce
+the size of the solution space. Figure \ref{bgraph} shows the miss
+rate for 2500 random cache hiearchies. This graph clearly shows that,
+in general ``Biggest Cache is Best Cache.'' That, is the best
+performing caches tend to be the largest. Based on this data, we
+decided to limit our search to cache organizations that consumed at
+least 30,000 bits of storage space. Using the MCECS computer labs as
+an impromptu server farm, we were able to determine to optimal cache
+hierarchy in less than 3 days, but used approximately 1200
+computer-hours. 
+
 %Oracle predictor and BTB variables
 %Table comparing Faust results to our results for Alpha
 \section{Results}
