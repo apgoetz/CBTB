@@ -564,15 +564,19 @@ bool alpha_global_predict(const branch_record_c *br)
 }
 
 //This is the predictor predictor AKA the Choice predictor
-//uses the global history to determine which predictor to use
+//uses the path history to determine which predictor to use
 bool alpha_predict(const branch_record_c *br)
 {
 	bool taken;
 
+	//Choice Predictor:
+	//Use the path history to index into the table of saturating counters
+	//Use the Global Predictor if the counter is more than 2
 	if(choice_predict[path_history] >= 2)
 	{
 		taken = alpha_global_predict(br);
 	}
+	//Use the Local Predictor if the counter is less than 2
 	else
 	{
 		taken = alpha_local_predict(br);
@@ -649,8 +653,9 @@ void alpha_setup(void)
 	//and the choice prediction table
 	for(i = 0; i < 4096; i++)
 	{
-		global_predict[i] = 0b01;
-		//sets the default choice prediction to weakly not taken
+		//sets the default global prediction to weakly not taken
+		global_predict[i] = 0b10;
+		//sets the default choice prediction to weakly taken
 		choice_predict[i] = 0b10;
 	}
 
