@@ -14,7 +14,6 @@
 
 %redefines subsections with letters instesad of numbers
 \renewcommand{\thesubsection}{\thesection.\alph{subsection}}
-
 % Center Image Command
 \newcommand{\centerimage}[3]{
 \begin{figure}[ht!]  
@@ -171,6 +170,11 @@ are in the cache. In addition to storing return addresses in the RAS,
 return addresses are also placed in the displacement and direct
 caches.
 
+\section{Size Budget}
+As mentioned above, we were limited to 8 kilobytes of storage space. A
+description of how this space was used can be found in section
+\ref{spaaace}.
+
 \section{Testing Methodology}
 
 In order to determine the optimal branch predictor, a generic
@@ -205,7 +209,7 @@ us to evaluate branch target buffer performance without being impacted
 by design decisions in the alpha predictor. 
 
 \centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Performance
-  of Random Sized BTB Caches}{bgraph}
+  of Random Sized Target Buffers}{bgraph}
 
 The decision was made to test the solution space exhaustively. The
 tuneable parameters on our cache meant that there were over 400,000
@@ -228,6 +232,16 @@ computer-hours.
 \section{Conclusion}
 \newpage
 \onecolumn
+\appendix
+\section{Space Budget}
+\label{spaaace}
+\begin{tabular}{lr}
+\textbf{Alpha Predictor} & \\
+Global History & 12\\
+\emph{Total:} & 2134 \\
+\textbf{Target Buffer} & \\
+asdf & \\
+\end{tabular}
 \section{Predictor.cc}
 \lstinputlisting[language=C++, showstringspaces=false]{../predictor.cc}
 \end{document}
