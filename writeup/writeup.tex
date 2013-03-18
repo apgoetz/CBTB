@@ -67,8 +67,22 @@ from the output of our Alpha Predictor. \\
 The Alpha Predictor is what is known as a tournament predictor.
 This means that it implements more than one branch predictor 
 and has a predictor-predictor to choose the most accurate branch 
-predictor.
-
+predictor. This tournament predictor (otherwise known as the 
+"Choice Predictor") is a 4096 entry table filled with 2-bit 
+saturating counters that select between the Global or the Local 
+predictor based on the history of the last 12 conditional branches
+(known as the "Path History") \\
+The Global Predictor is simply a 4096 entry table of 2-bit saturating 
+counters indexed by the Path History (similar to the Choice Predictor)
+that determine whether or not a branch is taken. \\
+The Local Predictor is 1024 entry table of local histories indexed
+by the least significant 10-bits of the Program Counter. This history
+is then used as an index into a 1024 entry table of 3-bit saturating
+counters which determines if a branch is taken or not. \\
+The overall design takes advantage of local history when a series of
+branches tend to stay within a limited address space and takes advantage
+of the global history when a series of branches tend to use a larger
+address space. \\
 Since the Alpha paper does not specify a few details about how the predictor
 works, liberties were taken in determining the best prediction values. 
 
