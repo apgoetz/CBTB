@@ -9,7 +9,6 @@
 \usepackage[colorlinks=true,linkcolor=black]{hyperref}
 %\usepackage[labelformat=empty]{caption}
 \usepackage[margin=1.0in]{geometry}
-\usepackage[section]{placeins}
 \pagestyle{fancy}
 
 %redefines subsections with letters instesad of numbers
@@ -182,8 +181,31 @@ caches.
 
 \section{Size Budget}
 As mentioned above, we were limited to 8 kilobytes of storage space. A
-description of how this space was used can be found in section
-\ref{spaaace}.
+description of how this space was used can be found in table \ref{spaaace}. 
+
+
+\begin{table}\begin{center}\begin{tabular}{lr}
+\textbf{Alpha Predictor} & \\
+Local History Tables & 10240 \\
+Local Predictor Counters & 3072\\
+Global History Counters & 8192\\
+Choice Predictors & 8192\\
+Global History & 12\\
+\hline
+\emph{Subtotal:} & 29708 \\
+\textbf{Branch Target Buffer} & \\
+Displacement Cache & 4352 \\
+Direct Cache & 30720 \\
+RAS & 682 \\
+\hline
+\emph{Subtotal:} & 35754 \\
+\hline
+\textbf{Total:} & 64462\\
+\end{tabular}
+\label{spaaace}
+\caption{Space Budget in Bits}
+\end{center}\end{table}
+
 
 \section{Testing Methodology}
 
@@ -243,15 +265,6 @@ computer-hours.
 \newpage
 \onecolumn
 \appendix
-\section{Space Budget}
-\label{spaaace}
-\begin{tabular}{lr}
-\textbf{Alpha Predictor} & \\
-Global History & 12\\
-\emph{Total:} & 2134 \\
-\textbf{Target Buffer} & \\
-asdf & \\
-\end{tabular}
 \section{Predictor.cc}
 \lstinputlisting[language=C++, showstringspaces=false]{../predictor.cc}
 \end{document}
