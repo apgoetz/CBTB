@@ -9,7 +9,7 @@
 \usepackage[colorlinks=true,linkcolor=black]{hyperref}
 %\usepackage[labelformat=empty]{caption}
 \usepackage[margin=1.0in]{geometry}
-
+\usepackage[section]{placeins}
 \pagestyle{fancy}
 
 %redefines subsections with letters instesad of numbers
@@ -80,7 +80,7 @@ stack stores the return address of the last 21 calls. This allows
 return addresses to be predicted, regardless of whether or not they
 are in the cache. In addition to storing return addresses in the RAS,
 return addresses are also placed in the displacement and direct
-caches. 
+caches.
 
 In order to determine the optimal branch predictor design, a generic
 predictor framework was designed that used environment variables to
@@ -109,7 +109,8 @@ plaintext tracefiles, allowing for much faster traces, as well as more
 detailed predictor statistics.
 
 \section{Testing Methodology}
-\centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Performance of Random Sized BTB Caches}{bgraph}
+\centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Performance
+  of Random Sized BTB Caches}{bgraph}
 %Oracle predictor and BTB variables
 %Table comparing Faust results to our results for Alpha
 \section{Results}
