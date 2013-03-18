@@ -61,10 +61,12 @@ test traces, in order to determine its performance.
 \subsection{Alpha Predictor}
 The branch predictor used in this project was modeled after
 The one described in R. E. Kessler's paper on the Alpha 
-21264 processor.\\
+21264 processor. 
 
 Since the Alpha paper does not specify a few details about how the predictor
 works, liberties were taken in determining the best prediction values. 
+
+\centerimage{\includegraphics[width=\columnwidth]{AlphaPredictor.png}}{Alpha Predictor}{Alpha}
 
 \subsubsection{Initialized Values}
 The Alpha paper did not specify which values to initialize the tables with.
@@ -76,23 +78,16 @@ For example, Changing the Global Predictor from weakly taken to weakly not taken
 the average $\frac{mispredicts}{1000\,\text{instructions}}$ from $14.10950$ to $14.07025$
 respectively, which is a significant performance improvement.
  
-\subsubsection{Choice Predictor Saturating Counters}
-The Choice Predictor design in the Alpha paper did not specify which saturating 
-counter values correspond to which predictor. Fortunately, this is irrelevant
-as long as the values are updated accordingly depending on correct prediction.
-In this implementation, the Global Predictor is used if the counter value is 
-greater than two and the Local Predictor is used otherwise.
-
 \subsubsection{Unconditional Branch Inclusion in the Path History}
 The Path History is important in determining which predictor to use
 in the case of the Choice Predictor and it is important in determining
 which saturating counter to use in the case of the Global Predictor.
 The Alpha predictor described in the paper did not specify whether or not
 unconditional branches are included in the Path History (i.e. jumps), but
-could change the results of these predictors significantly. For this 
-particular implementation, the Path History does not include these
-unconditional branches because they will always be "taken" and they
-would introduce random "taken" values in the Path History. 
+could change the results of these predictors significantly. Testing both 
+possibilities determined that the exclusion of the unconditional branches 
+yielded more accurate branch prediction, thus this implementation is using
+a Path History that ignores uncoditonal branches.
 
 \subsection{Branch Target Predictor} 
 
