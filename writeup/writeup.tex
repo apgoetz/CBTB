@@ -104,12 +104,49 @@ however, we still needed to gather information about the traces, in
 order to design an effective branch target predictor. 
 
 Figure \ref{ddelta} shows the ECDF of branch displacement for the
-first four benchmarks. As can be seen from this graph, virtually all
-of the data.
+first four benchmarks. As can be seen from this graph, most branches
+have destinations that are relatively close to the source program
+counter. From this, it follows that a branch target buffer that only
+stores the displacement to branch destination could achieve close to
+the same performance as a cache with direct-mapped branch
+destinations, while consuming less memory. 
 
 \centerimage{\includegraphics[width=\columnwidth]{ecdf-serv-delta.pdf}}{CDF
   of Branch Displacement Size}{ddelta}
 
+
+\begin{table}\begin{center}\begin{tabular}{ll}
+
+Entry Size (bits) & Storeable Branches \\
+\hline
+4 & 3.5\% \\
+8 & 51.9\% \\
+12 & 66.3\% \\
+16 & 81.8\% \\
+24 & 95.1\% 
+\end{tabular}\end{center}
+\caption{Displacement Cache Capacity}
+\label{dtable}
+\end{table}
+
+Table \ref{dtable} shows percentage of the branch targets that could
+fit in a buffer entry of 4, 8, 12, 16, and 24 bits. As can be seen by
+the table, while a larger displacement field can store a greater
+percent of the branch targets, even a 24 bit entry can only hold 95\%
+of branch targets. However, an 8 bit entry can store over half of the
+possible branch targets. This shows that in order to produce the best
+possible branch target performance, a hybrid approach is preferred:
+use two caches, one that only holds branches that can fit in a small
+displacement, and another that stores branch targets that are too
+large for the displacement field. 
+
+Another way that we sought to increase branch target performance was
+by using a Return Address Stack (RAS). Figure \ref{btype} shows the
+distribution of branch types in four of the benchmark programs. As can
+be seen from the graph, subroutine returns make up a not insubstantial
+part of each trace file, especially the server benchmark. 
+
+\centerimage{\includegraphics[width=\columnwidth]{btype.pdf}}{Branch Type Distribution}{btype}
 
 The branch target predictor used in the simulator can be seen in
 figure \ref{btbshape}. It is based on a hierarchy of two separate

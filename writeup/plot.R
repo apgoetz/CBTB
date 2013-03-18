@@ -25,3 +25,9 @@ ddata <- read.table('datasets/delta_data.gz')
 plot(ecdf(ddata[[1]]), main="", xlab="Jump Displacement", verticals=T, pch=46)
 dev.off()
 
+pdf("btype.pdf")
+bdata <- read.table('datasets/branchtypes', header=T, sep="\t")
+barplot(as.matrix(bdata), ylab='Number of Branches')
+legend("topright", c('cond', 'call', 'ret', 'indir'), fill=gray.colors(4))
+dev.off()
+
