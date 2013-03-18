@@ -41,15 +41,19 @@
 
 \begin{document}
 \maketitle
-\section{Introduction}
-\subsection{Overview}
-\section{Alpha Predictor}
+
+\section{Abstract}
+\section{Acknowledgements}
+\section{Background Information}
+
+\section{Implementation Details}
+\subsection{Alpha Predictor}
 The branch predictor used in this projectwas modeled after
 The one described in R. E. Kessler's paper on the Alpha 
 21264 processor.
 %ADD STUFFS ABOUT ALPHA PREDICTOR CHOICES NOT IN PAPER!!!
 
-\section{Branch Target Predictor} 
+\subsection{Branch Target Predictor} 
 
 The branch target predictor used in the simulator can be seen in
 figure \ref{btbshape}. It is based on a hierarchy of two separate
@@ -71,9 +75,32 @@ are in the cache. In addition to storing return addresses in the RAS,
 return addresses are also placed in the displacement and direct
 caches. 
 
-\section{Implementation Details}
-In order to determine the optimal cache design, the cache design was
-generalized so that 
+In order to determine the optimal branch predictor design, a generic
+predictor framework was designed that used environment variables to
+determine the cache hierarchy used by the branch target predictor.
+The tunable parameters can be seen in table \ref{envars}. 
+
+
+\begin{table}
+\begin{center}\begin{tabular}{p{.35\columnwidth}p{.5\columnwidth}}
+Variable Name & Description \\
+\hline
+\texttt{BTB\_MAIN\_SIZE} & Index bits of direct cache \\
+\texttt{BTB\_MAIN\_WAYS} & Number of ways of direct cache \\
+\texttt{BTB\_DISP\_ENTRIES} & Size of entry for displacement cache \\
+\texttt{BTB\_DISP\_SIZE} & Index bits of displacement cache \\
+\texttt{BTB\_DISP\_WAYS} & Number of ways of displacement cache \\
+\texttt{BTB\_WAY\_ALGO} & Way Eviction Policy (LRU or Round Robin) \\
+\texttt{BTB\_FUNC\_CAP} & Number of entries in RAS 
+\end{tabular}\end{center}
+\caption{Kickass}
+\label{envars}
+\end{table}
+
+In addition, a replacement predictor framework was written using
+plaintext tracefiles, allowing for much faster traces, as well as more
+detailed predictor statistics.
+
 
 
 \section{Testing Methodology}
