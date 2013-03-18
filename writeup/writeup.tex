@@ -130,10 +130,14 @@ fit in a buffer entry of 4, 8, 12, 16, and 24 bits. As can be seen by
 the table, while a larger displacement field can store a greater
 percent of the branch targets, even a 24 bit entry can only hold 95\%
 of branch targets. However, an 8 bit entry can store over half of the
-possible branch targets. This suggests a hybrid approach:
-use two caches, one that only holds branches that can fit in a small
+possible branch targets. This suggests a hybrid approach: use two
+caches, one that only holds branches that can fit in a small
 displacement, and another that stores branch targets that are too
-large for the displacement field. 
+large for the displacement field. This allows us to get performance
+that is close to that of a larger cache, while using less space. A 64
+entry by 10 way cache uses 77056 bits, while a combination of a 8 way
+main cache and 2 way displacement cache only uses 30720 bits, and
+achieves similar performance.
 
 \subsection{Return Address Stack}
 Another way that we sought to increase branch target performance was
@@ -143,6 +147,9 @@ be seen from the graph, subroutine returns make up a not insubstantial
 part of each trace file, especially the server benchmark. 
 
 \centerimage{\includegraphics[width=\columnwidth]{btype.pdf}}{Branch Type Distribution}{btype}
+
+
+\subsection{Target Predictor Implementation}
 
 The branch target predictor used in the simulator can be seen in
 figure \ref{btbshape}. It is based on a hierarchy of two separate
@@ -164,13 +171,12 @@ are in the cache. In addition to storing return addresses in the RAS,
 return addresses are also placed in the displacement and direct
 caches.
 
-\subsection{Target Predictor Implementation}
+\section{Testing Methodology}
 
 In order to determine the optimal branch predictor design, a generic
 predictor framework was designed that used environment variables to
 determine the cache hierarchy used by the branch target predictor.
 The tunable parameters can be seen in table \ref{envars}. 
-
 
 \begin{table}
 \begin{center}\begin{tabular}{p{.35\columnwidth}p{.5\columnwidth}}
@@ -182,10 +188,10 @@ Variable Name & Description \\
 \texttt{BTB\_DISP\_SIZE} & Index bits of displacement cache \\
 \texttt{BTB\_DISP\_WAYS} & Number of ways of displacement cache \\
 \texttt{BTB\_WAY\_ALGO} & Way Eviction Policy (LRU or Round Robin) \\
-\texttt{BTB\_FUNC\_CAP} & Number of entries in RAS pp
+\texttt{BTB\_FUNC\_CAP} & Number of entries in RAS
 \end{tabular}\end{center}
 \caption{BTB Tunable Parameters}
-p\label{envars}
+\label{envars}
 \end{table}
 
 In addition, a replacement predictor framework was written using
@@ -194,7 +200,7 @@ detailed predictor statistics. These statistics included a breakdown of
 the percentage of misses that were caused by function calls,
 conditional branches, and indirect branches, among other values. 
 
-\section{Testing Methodology}
+
 \centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Performance
   of Random Sized BTB Caches}{bgraph}
 %Oracle predictor and BTB variables
