@@ -423,7 +423,7 @@ void btb_update(const branch_record_c *br, uint actual_addr)
 		maincache->update(br->instruction_addr, actual_addr);
 	}
 	// if an address was evicted from the displacement cache,
-	put it in the main cache
+	//put it in the main cache
 	if(evicted_addr != 0){
 		maincache->update(evicted_addr,evicted_target);
 	}
