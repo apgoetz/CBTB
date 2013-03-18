@@ -52,6 +52,13 @@ The branch predictor used in this projectwas modeled after
 The one described in R. E. Kessler's paper on the Alpha 
 21264 processor.
 %ADD STUFFS ABOUT ALPHA PREDICTOR CHOICES NOT IN PAPER!!!
+\subsection{Implementation Details Not Specified}
+%initialization values of the tables
+The Alpha paper did not specify a few details about how the predictor
+works. The biggest missing piece was the initialization values of the tables.
+Over many branches, the values do not matter, but for a small data set given
+
+
 
 \subsection{Branch Target Predictor} 
 
@@ -101,11 +108,8 @@ In addition, a replacement predictor framework was written using
 plaintext tracefiles, allowing for much faster traces, as well as more
 detailed predictor statistics.
 
-
-
 \section{Testing Methodology}
-\centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Bitchin'
-  Graph}{bgraph}
+\centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Performance of Random Sized BTB Caches}{bgraph}
 %Oracle predictor and BTB variables
 %Table comparing Faust results to our results for Alpha
 \section{Results}

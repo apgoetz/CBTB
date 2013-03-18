@@ -536,13 +536,14 @@ void dec_cnt(unsigned char &counter, uint size) {
 //predicts taken/not taken branch based on local history
 bool alpha_local_predict(const branch_record_c *br)
 {
-	//grabs bits 0-9 of the PC to index the table
+	//grabs bits 0-9 of the PC to index the local history table
 	unsigned int PC = ((br->instruction_addr) & 0x3FF);
 
-	//grabs the history in the table
+	//grabs the history value stored in the table
 	unsigned int history = local_hist_table[PC];
 
 	//predict true if the counter is more than 4
+	//predict false if the counter is less than 4
 	//i.e. (weakly|strongly) taken
 	if(local_predict[history] >= 4)
 		return true;
