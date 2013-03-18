@@ -29,13 +29,14 @@
 \lhead[\fancyplain{}{\thepage}]         {\fancyplain{}{Andy Goetz \& Kevin Riedl}}
 \chead[\fancyplain{}{}]                 {\fancyplain{}{}}
 \rhead[\fancyplain{}{\rightmark}]       {\fancyplain{}{ECE 486 Branch Target Buffer Predictor \& Alpha Predictor}}
-\lfoot[\fancyplain{}{}]                 {\fancyplain{\tstamp}{\tstamp}}
-\cfoot[\fancyplain{\thepage}{}]         {\fancyplain{}{}}
-\rfoot[\fancyplain{\tstamp} {\tstamp}]  {\fancyplain{}{\thepage}}
+\lfoot[\fancyplain{}{}]                 {\fancyplain{}{}}
+\cfoot[\fancyplain{\thepage}{}]         {\fancyplain{}{\thepage}}
+\rfoot[\fancyplain{\tstamp} {\tstamp}]  {\fancyplain{}{}}
 
 \author{\LARGE Andy Goetz \& Kevin Riedl}
 \date{\today}
-\title{\Huge \textbf{ECE 486 Branch Target Buffer \& Alpha Predictor} \\ \rule{\linewidth}{0.5mm}}
+\title{\Huge \textbf{ECE 486 Final Project:} \\ \it{Branch Target Predictor} \\ \rule{\linewidth}{0.5mm}}
+
 
 \begin{document}
 \maketitle
@@ -58,7 +59,16 @@ test traces, in order to determine its performance.
 \section{Branch Predictor}
 The branch predictor used in this project was modeled after
 The one described in R. E. Kessler's paper on the Alpha 
-21264 processor. 
+21264 processor. Figure \ref{Alpha} shows the diagram of
+our implementation of the Alpha Predictor. The biggest
+difference between the Alpha Predictor specified in the
+paper and our implementation is that ours does not
+speculatively load the Path History with the predictions
+from the output of our Alpha Predictor. \\
+The Alpha Predictor is what is known as a tournament predictor.
+This means that it implements more than one branch predictor 
+and has a predictor-predictor to choose the most accurate branch 
+predictor.
 
 Since the Alpha paper does not specify a few details about how the predictor
 works, liberties were taken in determining the best prediction values. 
