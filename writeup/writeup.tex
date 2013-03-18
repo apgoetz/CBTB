@@ -57,8 +57,8 @@ predictor, with the requirement that it use only 8 kilobytes of
 state. This branch predictor was then tested against an array of 20
 test traces, in order to determine its performance. 
 
-\section{Implementation Details}
-\subsection{Alpha Predictor}
+
+\section{Branch Predictor}
 The branch predictor used in this project was modeled after
 The one described in R. E. Kessler's paper on the Alpha 
 21264 processor.\\
@@ -66,7 +66,7 @@ The one described in R. E. Kessler's paper on the Alpha
 Since the Alpha paper does not specify a few details about how the predictor
 works, liberties were taken in determining the best prediction values. 
 
-\subsubsection{Initialized Values}
+\subsection{Initialized Values}
 The Alpha paper did not specify which values to initialize the tables with.
 Fortunately, once many branches have occurred, the initial values do not matter
 when looking at a system which processes billions of branches between power downs.
@@ -76,14 +76,14 @@ For example, Changing the Global Predictor from weakly taken to weakly not taken
 the average $\frac{mispredicts}{1000\,\text{instructions}}$ from $14.10950$ to $14.07025$
 respectively, which is a significant performance improvement.
  
-\subsubsection{Choice Predictor Saturating Counters}
+\subsection{Choice Predictor Saturating Counters}
 The Choice Predictor design in the Alpha paper did not specify which saturating 
 counter values correspond to which predictor. Fortunately, this is irrelevant
 as long as the values are updated accordingly depending on correct prediction.
 In this implementation, the Global Predictor is used if the counter value is 
 greater than two and the Local Predictor is used otherwise.
 
-\subsubsection{Unconditional Branch Inclusion in the Path History}
+\subsection{Unconditional Branch Inclusion in the Path History}
 The Path History is important in determining which predictor to use
 in the case of the Choice Predictor and it is important in determining
 which saturating counter to use in the case of the Global Predictor.
@@ -94,7 +94,7 @@ particular implementation, the Path History does not include these
 unconditional branches because they will always be "taken" and they
 would introduce random "taken" values in the Path History. 
 
-\subsection{Branch Target Predictor} 
+\section{Branch Target Predictor} 
 
 In order to be truly successful, a branch predictor must be carefully
 tuned to its target workload. The fact that the set of all traces our
@@ -103,6 +103,7 @@ presented us with an unbridled opportunity for benchmarketing,
 however, we still needed to gather information about the traces, in
 order to design an effective branch target predictor. 
 
+\subsection{Displacement Cache}
 Figure \ref{ddelta} shows the ECDF of branch displacement for the
 first four benchmarks. As can be seen from this graph, most branches
 have destinations that are relatively close to the source program
@@ -134,12 +135,12 @@ fit in a buffer entry of 4, 8, 12, 16, and 24 bits. As can be seen by
 the table, while a larger displacement field can store a greater
 percent of the branch targets, even a 24 bit entry can only hold 95\%
 of branch targets. However, an 8 bit entry can store over half of the
-possible branch targets. This shows that in order to produce the best
-possible branch target performance, a hybrid approach is preferred:
+possible branch targets. This suggests a hybrid approach:
 use two caches, one that only holds branches that can fit in a small
 displacement, and another that stores branch targets that are too
 large for the displacement field. 
 
+\subsection{Return Address Stack}
 Another way that we sought to increase branch target performance was
 by using a Return Address Stack (RAS). Figure \ref{btype} shows the
 distribution of branch types in four of the benchmark programs. As can
@@ -168,6 +169,8 @@ are in the cache. In addition to storing return addresses in the RAS,
 return addresses are also placed in the displacement and direct
 caches.
 
+\subsection{Target Predictor Implementation}
+
 In order to determine the optimal branch predictor design, a generic
 predictor framework was designed that used environment variables to
 determine the cache hierarchy used by the branch target predictor.
@@ -187,7 +190,7 @@ Variable Name & Description \\
 \texttt{BTB\_FUNC\_CAP} & Number of entries in RAS pp
 \end{tabular}\end{center}
 \caption{BTB Tunable Parameters}
-\label{envars}
+p\label{envars}
 \end{table}
 
 In addition, a replacement predictor framework was written using
