@@ -48,17 +48,40 @@
 
 \section{Implementation Details}
 \subsection{Alpha Predictor}
-The branch predictor used in this projectwas modeled after
+The branch predictor used in this project was modeled after
 The one described in R. E. Kessler's paper on the Alpha 
-21264 processor.
-%ADD STUFFS ABOUT ALPHA PREDICTOR CHOICES NOT IN PAPER!!!
-\subsection{Implementation Details Not Specified}
-%initialization values of the tables
-The Alpha paper did not specify a few details about how the predictor
-works. The biggest missing piece was the initialization values of the tables.
-Over many branches, the values do not matter, but for a small data set given
+21264 processor.\\
 
+Since the Alpha paper does not specify a few details about how the predictor
+works, liberties were taken in determining the best prediction values. 
 
+\subsubsection{Initialized Values}
+The Alpha paper did not specify which values to initialize the tables with.
+Fortunately, once many branches have occurred, the initial values do not matter
+when looking at a system which processes billions of branches between power downs.
+For the relatively small trace data set used in these simulations however,
+the initialization values were important for determining more accurate branch prediction.
+For example, Changing the Global Predictor from weakly taken to weakly not taken changes 
+the average $\frac{mispredicts}{1000\,\text{instructions}}$ from $14.10950$ to $14.07025$
+respectively, which is a significant performance improvement.
+ 
+\subsubsection{Choice Predictor Saturating Counters}
+The Choice Predictor design in the Alpha paper did not specify which saturating 
+counter values correspond to which predictor. Fortunately, this is irrelevant
+as long as the values are updated accordingly depending on correct prediction.
+In this implementation, the Global Predictor is used if the counter value is 
+greater than two and the Local Predictor is used otherwise.
+
+\subsubsection{Unconditional Branch Inclusion in the Path History}
+The Path History is important in determining which predictor to use
+in the case of the Choice Predictor and it is important in determining
+which saturating counter to use in the case of the Global Predictor.
+The Alpha predictor described in the paper did not specify whether or not
+unconditional branches are included in the Path History (i.e. jumps), but
+could change the results of these predictors significantly. For this 
+particular implementation, the Path History does not include these
+unconditional branches because they will always be "taken" and they
+would introduce random "taken" values in the Path History. 
 
 \subsection{Branch Target Predictor} 
 
