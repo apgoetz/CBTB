@@ -44,7 +44,18 @@
 
 \section{Abstract}
 \section{Acknowledgements}
+
+The authors would like to thank Tyler Tricker, Bradon Kanyid, and Eric
+Krause for the many hours of fruitful discussions. Additionally, they
+would like to thank Beth Krause for the delicious cookies provided.
+
 \section{Background Information}
+The purpose of this project was to develop a branch predictor for an
+unknown ISA. We were required to copy the branch predictor used in the
+Alpha 21264 processor. We were then required to design a branch target
+predictor, with the requirement that it use only 8 kilobytes of
+state. This branch predictor was then tested against an array of 20
+test traces, in order to determine its performance. 
 
 \section{Implementation Details}
 \subsection{Alpha Predictor}
@@ -61,6 +72,21 @@ Over many branches, the values do not matter, but for a small data set given
 
 
 \subsection{Branch Target Predictor} 
+
+In order to be truly successful, a branch predictor must be carefully
+tuned to its target workload. The fact that the set of all traces our
+branch predictor would be tested against was known ahead of time
+presented us with an unbridled opportunity for benchmarketing,
+however, we still needed to gather information about the traces, in
+order to design an effective branch target predictor. 
+
+Figure \ref{ddelta} shows the ECDF of branch displacement for the
+first four benchmarks. As can be seen from this graph, virtually all
+of the data.
+
+\centerimage{\includegraphics[width=\columnwidth]{ecdf-serv-delta.pdf}}{CDF
+  of Branch Displacement Size}{ddelta}
+
 
 The branch target predictor used in the simulator can be seen in
 figure \ref{btbshape}. It is based on a hierarchy of two separate
@@ -98,15 +124,17 @@ Variable Name & Description \\
 \texttt{BTB\_DISP\_SIZE} & Index bits of displacement cache \\
 \texttt{BTB\_DISP\_WAYS} & Number of ways of displacement cache \\
 \texttt{BTB\_WAY\_ALGO} & Way Eviction Policy (LRU or Round Robin) \\
-\texttt{BTB\_FUNC\_CAP} & Number of entries in RAS 
+\texttt{BTB\_FUNC\_CAP} & Number of entries in RAS pp
 \end{tabular}\end{center}
-\caption{Kickass}
+\caption{BTB Tunable Parameters}
 \label{envars}
 \end{table}
 
 In addition, a replacement predictor framework was written using
 plaintext tracefiles, allowing for much faster traces, as well as more
-detailed predictor statistics.
+detailed predictor statistics. These statistics included breakdown of
+the percentage of misses that were caused by function calls,
+conditional branches, and indirect branches, among other values. 
 
 \section{Testing Methodology}
 \centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Performance

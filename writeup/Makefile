@@ -1,5 +1,5 @@
 DOC=writeup
-FIGURES=ecdf-fp-1-stack.pdf ecdf-serv-1-stack.pdf maxdepth.pdf random.pdf
+FIGURES=ecdf-fp-1-stack.pdf ecdf-serv-1-stack.pdf maxdepth.pdf random.pdf ecdf-serv-delta.pdf
 
 
 all: $(DOC).pdf

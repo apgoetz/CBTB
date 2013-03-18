@@ -19,3 +19,9 @@ pdf("maxdepth.pdf")
 maxdepth <- read.table("datasets/stackdepth", header=T, sep="\t")
 barplot(as.matrix(maxdepth), beside=T)
 dev.off()
+
+pdf("ecdf-serv-delta.pdf")
+ddata <- read.table('datasets/delta_data.gz')
+plot(ecdf(ddata[[1]]), main="", xlab="Jump Displacement", verticals=T, pch=46)
+dev.off()
+
