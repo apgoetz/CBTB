@@ -18,8 +18,7 @@
 % Center Image Command
 \newcommand{\centerimage}[3]{
 \begin{figure}[ht!]  
-\begin{center}
-#1
+\begin{center} #1
 \caption{#2}
 \label{#3}
 \end{center}
@@ -74,7 +73,7 @@ when looking at a system which processes billions of branches between power down
 For the relatively small trace data set used in these simulations however,
 the initialization values were important for determining more accurate branch prediction.
 For example, Changing the Global Predictor from weakly taken to weakly not taken changes 
-the average $\frac{mispredicts}{1000\,\text{instructions}}$ from $14.10950$ to $14.07025$
+the average $\frac{\#\,of\,mispredicts}{1000\,\text{instructions}}$ from $14.10950$ to $14.07025$
 respectively, which is a significant performance improvement.
  
 \subsection{Unconditional Branch Inclusion in the Path History}
@@ -94,18 +93,19 @@ a Path History that ignores uncoditonal branches.
 In order to be truly successful, a branch predictor must be carefully
 tuned to its target workload. The fact that the set of all traces our
 branch predictor would be tested against was known ahead of time
-presented us with an unbridled opportunity for benchmarketing,
+presented us with an unbridled opportunity for "benchmarketing",
 however, we still needed to gather information about the traces, in
 order to design an effective branch target predictor. 
 
 \subsection{Displacement Cache}
-Figure \ref{ddelta} shows the ECDF of branch displacement for the
-first four benchmarks. As can be seen from this graph, most branches
-have destinations that are relatively close to the source program
-counter. From this, it follows that a branch target buffer that only
-stores the displacement to branch destination could achieve close to
-the same performance as a cache with direct-mapped branch
-destinations, while consuming less memory. 
+Figure \ref{ddelta} shows the ECDF (Empirical Cumulative 
+Distribution Function) first four benchmarks. As can be 
+seen from this graph, most branches have destinations that 
+are relatively close to the source program counter. From 
+this, it follows that a branch target buffer that only 
+stores the displacement to branch destination could achieve 
+close to the same performance as a cache with direct-mapped 
+branch destinations, while consuming less memory. 
 
 \centerimage{\includegraphics[width=\columnwidth]{ecdf-serv-delta.pdf}}{CDF
   of Branch Displacement Size}{ddelta}
