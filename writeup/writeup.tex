@@ -170,6 +170,14 @@ part of each trace file, especially the server benchmark.
 
 \centerimage{\includegraphics[width=\columnwidth]{btype.pdf}}{Branch Type Distribution}{btype}
 
+\centerimage{\includegraphics[width=\columnwidth]{maxdepth.pdf}}{Maximum
+  Callstack Depth per Trace}{maxdepth}
+
+The size of the return address stack is important. Figure
+\ref{maxdepth} shows that the test traces have widely varying maximum
+depths. There is a diminishing return on creating a larger RAS, but
+the relationship between stack size and predictor performance is not
+intuitive. 
 
 \subsection{Target Predictor Implementation}
 
@@ -320,8 +328,6 @@ performing target predictor. Also, we originally thought that a larger
 displacement cache would result in better hit rates. However, the best
 predictor topology only had 128 entries.
 
-\centerimage{\includegraphics[width=\columnwidth]{maxdepth.pdf}}{Maximum
-  Callstack Depth per Trace}{maxdepth}
 
 %Table with all prediction rates for all tests
 \section{Conclusion}
