@@ -350,29 +350,27 @@ topology only had 128 entries.
 
 %Table with all prediction rates for all tests
 \section{Conclusion}
-The branch target predictor used in this implementation provided 
-a very high accuracy when considering the number of correct 
-branch predictions from the alpha predictor. The initial assumption
-was that limiting the total size of the whole design to being 8kB
-would significantly limit how accurate our target predictor would be.
-As it turned out, the limited size, while slightly limiting our 
-possibilities, still provided frequently accurate predictions.
-Exhaustive testing (as seen in the previous sections) provided 
-results that yielded a branch target predictor design that 
-had a higher prediction accuracy than we had initially anticipated.
-Exhaustive testing beyond 8kB will not scale well considering the 
-large amount of time it took to calculate the branch target 
-predictor configurations that yielded the highest accuracy.
-A better way to determine the most accurate configurations would 
-be with meta-heuristics which would more intelligently (and thus 
-more quickly) determine the most accurate branch target predictor 
-configurations.
+The branch target predictor we developed provided very high accuracy,
+considering the (comparative) inaccuracy of the alpha predictor. Our
+initial assumption that limiting the total size of the whole design to
+less than 8 kilobytes would significantly limit the accuracy of our
+target predictor proved false.  As it turned out, the limited size
+still provided frequently accurate predictions.  Exhaustive testing
+(as seen in the previous sections) provided results that yielded a
+branch target predictor design that had a higher prediction accuracy
+than we had initially anticipated.  However, this solution is not
+scaleable. Exhaustive testing beyond 8 kilobytes will not scale well
+considering the large amount of time it took to calculate the branch
+target predictor configurations that yielded the highest accuracy.  A
+better way to determine the most accurate configurations would be with
+meta-heuristics which would more intelligently (and thus more quickly)
+determine the most accurate branch target predictor configurations.
 
 
 \newpage
 \onecolumn
 \appendix
-\section{Predictor.cc}
+\section*{Predictor.cc}
 \lstinputlisting[language=C++, showstringspaces=false]{../predictor.cc}
 \end{document}
 
