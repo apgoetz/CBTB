@@ -617,7 +617,7 @@ void alpha_update(const branch_record_c *br, bool taken)
 	//Global Predictor:
 	//updates the global predictor saturated counter
 	if(taken)
-		inc_cnt(global_predict[path_history],2);
+		inc_cnt(global_predict[path_history], 2);
 
 	else
 		dec_cnt(global_predict[path_history], 2);
@@ -627,7 +627,7 @@ void alpha_update(const branch_record_c *br, bool taken)
 	if(taken)
 		inc_cnt(local_predict[local_hist_table[PC]], 3);
 
-	else if(!taken)
+	else 
 		dec_cnt(local_predict[local_hist_table[PC]], 3);
 
 	//Path History:
