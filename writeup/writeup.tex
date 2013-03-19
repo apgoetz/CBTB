@@ -274,6 +274,41 @@ computer-hours.
 %Oracle predictor and BTB variables
 %Table comparing Faust results to our results for Alpha
 \section{Results}
+
+Optimizing the cache hierarchy using a server farm paid off
+admirably. We were able to achive a rate of 6.243 missed predicts per
+thousand instructions, and 13.071 missed targets per thousand
+instructions. Individual results are detailed in table \ref{bdibd}.
+
+\begin{table}\begin{center}\begin{tabular}{lll}
+\textit{Trace} & \textit{tpredict} & \textit{bpredict} \\
+DIST-FP-1& 3.363 & 3.376 \\
+DIST-FP-2& 1.321 & 1.339 \\
+DIST-FP-3& 0.523 & 0.549 \\
+DIST-FP-4& 0.267 & 0.290 \\
+DIST-FP-5& 2.474 & 2.483 \\
+DIST-INT-1& 8.598 & 8.622 \\
+DIST-INT-2&11.868 &16.260 \\
+DIST-INT-3&12.618 &12.952 \\
+DIST-INT-4& 2.896 & 3.460 \\
+DIST-INT-5& 0.477 & 0.666 \\
+DIST-MM-1& 8.906 & 8.923 \\
+DIST-MM-2&10.830 &11.176 \\
+DIST-MM-3& 1.565 & 9.102 \\
+DIST-MM-4& 2.150 & 2.929 \\
+DIST-MM-5& 6.447 &13.853 \\
+DIST-SERV-1& 9.781 &34.708 \\
+DIST-SERV-2&10.144 &34.715 \\
+DIST-SERV-3& 8.145 &18.377 \\
+DIST-SERV-4&10.944 &37.397 \\
+DIST-SERV-5&11.542 &40.241 \\
+\hline
+\textbf{Total:} & 6.243&13.071
+\end{tabular}\end{center}
+\caption{Biggest Data is Best Data}
+\label{bdibd}
+\end{table}
+
 %Table with all prediction rates for all tests
 \section{Conclusion}
 \newpage
