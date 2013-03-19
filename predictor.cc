@@ -8,6 +8,15 @@
 #include <vector>
 #include <deque>
 
+// Table size values for the Alpha Predictor
+//local history table
+#define LHT_SIZE 1024
+//local prediction table
+#define LPT_SIZE 1024
+//global prediction table
+#define GPT_SIZE 4096
+//choice predictor table
+#define CPT_SIZE 4096
 
 // Global variables used in multiple files:
 
@@ -502,20 +511,20 @@ static void on_exit(void);
 static void init(void);
 
 //Local history table, only the least significant 10 bits will be used
-unsigned short local_hist_table[1024];
+unsigned short local_hist_table[LHT_SIZE];
 
 //Local prediction bits for the saturated counter for the local branch predictor
 //Only uses least significant 3 bits
-unsigned char local_predict[1024];
+unsigned char local_predict[LPT_SIZE];
 
 //Global prediction bits for the sturated counter for the global
 //branch predictor Only uses least significant 2 bits
-unsigned char global_predict[4096];
+unsigned char global_predict[GPT_SIZE];
 
 //Choice prediction bits for the saturated counter that chooses the
 //predictor that will be used to do the predicting. Only uses least
 //significant 2 bits
-unsigned char choice_predict[4096];
+unsigned char choice_predict[CPT_SIZE];
 
 //Path history stores the history of the last 12 branches.
 //Only the least significant 12 bits are used, with the lsb
@@ -643,18 +652,26 @@ void alpha_setup(void)
 	int i = 0;
 
 	//initialize the tables for the local predictor
-	for(i = 0; i < 1024; i++)
+	for(i = 0; i < LHT_SIZE; i++)
 	{
 		local_hist_table[i] = 0;
+	}
+
+	for(i = 0; i < LPT_SIZE; i++)
+	{
 		local_predict[i] = 0b011;
 	}
 
 	//initialize the global prediction table
-	//and the choice prediction table
-	for(i = 0; i < 4096; i++)
+	for(i = 0; i < GPT_SIZE; i++)
 	{
 		//sets the default global prediction to weakly not taken
-		global_predict[i] = 0b10;
+		global_predict[i] = 0b01;
+	}
+
+	//initialize the choice prediction table
+	for(i = 0; i < CPT_SIZE; i++)
+	{
 		//sets the default choice prediction to weakly taken
 		choice_predict[i] = 0b10;
 	}
