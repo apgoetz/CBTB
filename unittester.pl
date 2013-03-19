@@ -26,7 +26,7 @@ sub process_args {
 my $testdir = process_args(\@ARGV);
 
 opendir (my $dir, $testdir) or die ("Could not open test directory $testdir: $!");
-my @testlist = grep(!/^\./,readdir $dir);
+my @testlist = grep(!/(^\.|~)/,readdir $dir);
 closedir $dir;
 
 my $total_tests = scalar @testlist;

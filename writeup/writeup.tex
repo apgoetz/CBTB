@@ -40,9 +40,16 @@
 \begin{document}
 \maketitle
 \section{Abstract}
-\textit{
-  STFU
-}
+\textit{ A branch target predictor was developed for an unknown
+  ISA. Computer simulations using novel heuristics were used to
+  evaluate thousands of possible cache hierarchies, in order to
+  produce the optimal cache result. This cache had a target miss rate
+  of 13.071 branches per thousand instructions, while the
+  taken/not-taken predictor had a miss rate of 6.243 branches per
+  thousand instructions.  }\\
+
+\textbf{Keywords: } Branch Prediction, Simulation, Heuristics, ISA, 0xBEEFA55
+
 \section{Acknowledgements}
 
 The authors would like to thank Tyler Tricker, Bradon Kanyid, and Eric
@@ -59,59 +66,68 @@ test traces, in order to determine its performance.
 
 
 \section{Branch Predictor}
-The branch predictor used in this project was modeled after
-The one described in R. E. Kessler's paper on the Alpha 
-21264 processor. Figure \ref{Alpha} shows the diagram of
-our implementation of the Alpha Predictor. The biggest
-difference between the Alpha Predictor specified in the
-paper and our implementation is that ours does not
-speculatively load the Path History with the predictions
-from the output of our Alpha Predictor. \\
-The Alpha Predictor is what is known as a tournament predictor.
-This means that it implements more than one branch predictor 
-and has a predictor-predictor to choose the most accurate branch 
-predictor. This tournament predictor (otherwise known as the 
-"Choice Predictor") is a 4096 entry table filled with 2-bit 
-saturating counters that select between the Global or the Local 
-predictor based on the history of the last 12 conditional branches
-(known as the "Path History") \\
-The Global Predictor is simply a 4096 entry table of 2-bit saturating 
-counters indexed by the Path History (similar to the Choice Predictor)
-that determine whether or not a branch is taken. \\
-The Local Predictor is 1024 entry table of local histories indexed
-by the least significant 10-bits of the Program Counter. This history
-is then used as an index into a 1024 entry table of 3-bit saturating
-counters which determines if a branch is taken or not. \\
-The overall design takes advantage of local history when a series of
-branches tend to stay within a limited address space and takes advantage
-of the global history when a series of branches tend to use a larger
-address space. \\
-Since the Alpha paper does not specify a few details about how the predictor
-works, liberties were taken in determining the best prediction values. 
+The branch predictor used in this project was modeled after the one
+described in R. E. Kessler's paper on the Alpha 21264
+processor. Figure \ref{Alpha} shows the diagram of our implementation
+of the alpha predictor. The biggest difference between the alpha
+predictor specified in the paper and our implementation is that ours
+does not speculatively load the path history with the predictions from
+the output of our alpha predictor. 
 
-\centerimage{\includegraphics[width=\columnwidth]{AlphaPredictor.png}}{Alpha Predictor}{Alpha}
+ The alpha predictor is what is known as a tournament predictor.  This
+ means that it implements more than one branch predictor and has a
+ predictor-predictor to choose the most accurate branch
+ predictor. This tournament predictor (otherwise known as the ``Choice
+ Predictor'') is a 4096 entry table filled with 2-bit saturating
+ counters that select between the global or the local predictor based
+ on the history of the last 12 conditional branches (known as the
+ ``Path History'')
+
+ The global predictor is simply a 4096 entry table of 2-bit saturating
+ counters indexed by the path history (similar to the choice
+ predictor) that determine whether or not a branch is taken.
+
+ The local predictor is 1024 entry table of local histories indexed by
+ the least significant 10-bits of the program counter. This history is
+ then used as an index into a 1024 entry table of 3-bit saturating
+ counters which determines if a branch is taken or not.
+
+ The overall design takes advantage of local history when a series of
+ branches tend to stay within a limited address space and takes
+ advantage of the global history when a series of branches tend to use
+ a larger address space.
+
+ Since the alpha paper does not specify a few details about how the
+ predictor works, liberties were taken in determining the best
+ prediction values.
+
+\centerimage{\includegraphics[width=\columnwidth]{AlphaPredictor.png}}{Alpha
+  Predictor}{Alpha}
 \subsection{Initialized Values}
 
-The Alpha paper did not specify which values to initialize the tables with.
-Fortunately, once many branches have occurred, the initial values do not matter
-when looking at a system which processes billions of branches between power downs.
-For the relatively small trace data set used in these simulations however,
-the initialization values were important for determining more accurate branch prediction.
-For example, Changing the Global Predictor from weakly taken to weakly not taken changes 
-the average $\frac{\#\,of\,mispredicts}{1000\,\text{instructions}}$ from $14.10950$ to $14.07025$
-respectively, which is a significant performance improvement.
+The Alpha paper did not specify which values to initialize the tables
+with.  Fortunately, once many branches have occurred, the initial
+values do not matter when looking at a system which processes billions
+of branches between power downs.  For the relatively small trace data
+set used in these simulations however, the initialization values were
+important for determining more accurate branch prediction.  For
+example, Changing the Global Predictor from weakly taken to weakly not
+taken changes the average
+$\frac{\#\,of\,mispredicts}{1000\,\text{instructions}}$ from
+$14.10950$ to $14.07025$ respectively, which is a significant
+performance improvement.
  
 \subsection{Unconditional Branch Inclusion in the Path History}
 
-The Path History is important in determining which predictor to use
-in the case of the Choice Predictor and it is important in determining
-which saturating counter to use in the case of the Global Predictor.
-The Alpha predictor described in the paper did not specify whether or not
-unconditional branches are included in the Path History (i.e. jumps), but
+The path history is important in determining which predictor to use
+in the case of the choice predictor and it is important in determining
+which saturating counter to use in the case of the global predictor.
+The alpha predictor described in the paper did not specify whether or not
+unconditional branches are included in the path history (i.e. jumps), but
 could change the results of these predictors significantly. Testing both 
 possibilities determined that the exclusion of the unconditional branches 
 yielded more accurate branch prediction, thus this implementation is using
-a Path History that ignores uncoditonal branches.
+a path history that ignores unconditonal branches.
 
 \section{Branch Target Predictor} 
 
@@ -120,21 +136,19 @@ tuned to its target workload. The fact that the set of all traces our
 branch predictor would be tested against was known ahead of time
 presented us with an unbridled opportunity for "benchmarketing",
 however, we still needed to gather information about the traces, in
-order to design an effective branch target predictor. 
+order to design an effective branch target predictor.
 
 \subsection{Displacement Cache}
-Figure \ref{ddelta} shows the ECDF (Empirical Cumulative 
-Distribution Function) first four benchmarks. As can be 
-seen from this graph, most branches have destinations that 
-are relatively close to the source program counter. From 
-this, it follows that a branch target buffer that only 
-stores the displacement to branch destination could achieve 
-close to the same performance as a cache with direct-mapped 
-branch destinations, while consuming less memory. 
+Figure \ref{ddelta} shows the ECDF (Empirical Cumulative Distribution
+Function) of the first four benchmarks. As can be seen from this
+graph, most branches have destinations that are relatively close to
+the source program counter. From this, it follows that a branch target
+buffer that only stores the displacement to branch destination could
+achieve close to the same performance as a cache with direct-mapped
+branch destinations, while consuming less memory.
 
 \centerimage{\includegraphics[width=\columnwidth]{ecdf-serv-delta.pdf}}{CDF
   of Branch Displacement Size}{ddelta}
-
 
 \begin{table}\begin{center}\begin{tabular}{ll}
 
@@ -169,9 +183,10 @@ Another way that we sought to increase branch target performance was
 by using a Return Address Stack (RAS). Figure \ref{btype} shows the
 distribution of branch types in four of the benchmark programs. As can
 be seen from the graph, subroutine returns make up a not insubstantial
-part of each trace file, especially the server benchmark. 
+part of each trace file, especially the server benchmarks. 
 
-\centerimage{\includegraphics[width=\columnwidth]{btype.pdf}}{Branch Type Distribution}{btype}
+\centerimage{\includegraphics[width=\columnwidth]{btype.pdf}}{Branch
+  Type Distribution}{btype}
 
 \centerimage{\includegraphics[width=\columnwidth]{maxdepth.pdf}}{Maximum
   Callstack Depth per Trace}{maxdepth}
@@ -180,7 +195,7 @@ The size of the return address stack is important. Figure
 \ref{maxdepth} shows that the test traces have widely varying maximum
 depths. There is a diminishing return on creating a larger RAS, but
 the relationship between stack size and predictor performance is not
-intuitive. 
+intuitive.
 
 \subsection{Target Predictor Implementation}
 
@@ -206,7 +221,8 @@ caches.
 
 \section{Size Budget}
 As mentioned above, we were limited to 8 kilobytes of storage space. A
-description of how this space was used can be found in table \ref{spaaace}. 
+description of how this space was used can be found in table
+\ref{spaaace}.
 
 
 \begin{table}\begin{center}\begin{tabular}{lr}
@@ -237,7 +253,7 @@ RAS & 682 \\
 In order to determine the optimal branch predictor, a generic
 predictor framework was designed that used environment variables to
 determine the cache hierarchy used by the branch target predictor.
-The tunable parameters can be seen in table \ref{envars}. 
+The tunable parameters can be seen in table \ref{envars}.
 
 \begin{table}
 \begin{center}\begin{tabular}{p{.35\columnwidth}p{.5\columnwidth}}
@@ -263,7 +279,7 @@ conditional branches, and indirect branches, among other values. Also,
 an oracle predictor was developed. This oracle was capable of perfect
 prediction of a given branch's taken/not-taken status, which allowed
 us to evaluate branch target buffer performance without being impacted
-by design decisions in the alpha predictor. 
+by design decisions in the alpha predictor.
 
 \centerimage{\includegraphics[width=\columnwidth]{random.pdf}}{Performance
   of Random Sized Target Buffers}{bgraph}
@@ -323,13 +339,13 @@ DIST-SERV-5&11.542 &40.241 \\
 
 The optimal cache hierarchy we found was surprising. Initially, we
 thought that the optimal target predictor design would have a much
-larger Return address stack. Figure \ref{maxdepth} shows that the
-server traces routinely have stack depths that range into the
-hundreds. There is no way that a 21 entry return address stack could
-hold the entire callstack. However, this hierarchy produced the best
-performing target predictor. Also, we originally thought that a larger
-displacement cache would result in better hit rates. However, the best
-predictor topology only had 128 entries.
+larger RAS. Figure \ref{maxdepth} shows that the server traces
+routinely have stack depths that range into the hundreds. There is no
+way that a 21 entry return address stack could hold the entire
+callstack. However, this hierarchy produced the best performing target
+predictor. Also, we originally thought that a larger displacement
+cache would result in better hit rates. However, the best predictor
+topology only had 128 entries.
 
 
 %Table with all prediction rates for all tests
